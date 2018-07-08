@@ -1,0 +1,657 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="css/style.css">
+		<script>
+			var url="https://www.youtube.com/watch?v=eZdOkDtYMoo&index=15&list=PL3FW7Lu3i5JvHM8ljYj-zLfQRF3EO8sYv"
+		</script>
+		<script src="js/script.js"></script>
+	</head>
+	<body>
+		<div>
+<h1>Lecture 15 - Efficient Methods and Hardware for Deep Learning</h1>
+<br/>
+<p>Hello everyone, welcome to CS231. <span onclick="goVideo(this)" class="timestamp">00:11</span></p>
+<p>I'm Song Han. <span onclick="goVideo(this)" class="timestamp">00:14</span></p>
+<p>Today I'm going to give a guest lecture on the efficient methods and hardware for deep learning.</p>
+<p>So I'm a fifth year PhD candidate here at Stanford, advised by Professor Bill Dally. <span onclick="goVideo(this)" class="timestamp">00:21</span></p>
+<p>So, in this course we have seen a lot of convolution neural networks, recurrent neural networks, or even since last time, the reinforcement learning. <span onclick="goVideo(this)" class="timestamp">00:28</span></p>
+<p>They are spanning a lot of applications. <span onclick="goVideo(this)" class="timestamp">00:37</span></p>
+<p>For example, the self-=driving car, machine translation, AlphaGo and Smart Robots. <span onclick="goVideo(this)" class="timestamp">00:39</span></p>
+<p>And it's changing our lives, but there is a recent trend that in order to achieve such high accuracy, the models are getting larger and larger. <span onclick="goVideo(this)" class="timestamp">00:44</span></p>
+<p>For example for ImageNet recognition, the winner from 2012 to 2015, the model size increased by 16X. <span onclick="goVideo(this)" class="timestamp">00:53</span></p>
+<p>And just in one year, for Baidu's deep speech just in one year, the training operations, the number of training operations increased by 10X. <span onclick="goVideo(this)" class="timestamp">01:02</span></p>
+<p>So such large model creates lots of problems, for example the model size becomes larger and larger so it's difficult for them to be deployed either on those for example, on the mobile phones. <span onclick="goVideo(this)" class="timestamp">01:12</span></p>
+<p>If the item is larger than 100 megabytes, you cannot download until you connect to Wi-Fi. <span onclick="goVideo(this)" class="timestamp">01:25</span></p>
+<p>So those product managers and for example Baidu, Facebook, they are very sensitive to the size of the binary size of their model. <span onclick="goVideo(this)" class="timestamp">01:30</span></p>
+<p>And also for example, the self-driving car, you can only do those on over-the-air update for the model if the model is too large, it's also difficult. <span onclick="goVideo(this)" class="timestamp">01:37</span></p>
+<p>And the second challenge for those large models is that the training speed is extremely slow. <span onclick="goVideo(this)" class="timestamp">01:47</span></p>
+<p>For example, the ResNet152, which is only a few, less than 1% actually, more accurate than ResNet101. <span onclick="goVideo(this)" class="timestamp">01:55</span></p>
+<p>Takes 1.5 weeks to train on four Maxwell M40 GPUs for example. <span onclick="goVideo(this)" class="timestamp">02:03</span></p>
+<p>Which greatly limits either we are doing homework or if the researcher's designing new models is getting pretty slow. <span onclick="goVideo(this)" class="timestamp">02:11</span></p>
+<p>And the third challenge for those bulky model is the energy efficiency. <span onclick="goVideo(this)" class="timestamp">02:19</span></p>
+<p>For example, the AlphaGo beating Lee Sedol last year, took 2000 CPUs and 300 GPUs, which cost $3,000 just to pay for the electric bill, which is insane. <span onclick="goVideo(this)" class="timestamp">02:24</span></p>
+<p>So either on those embedded devices, those models are draining your battery power for on data-center increases the total cost of ownership of maintaining a large data-center. <span onclick="goVideo(this)" class="timestamp">02:37</span></p>
+<p>For example, Google in their blog, they mentioned if all the users using the Google Voice Search for just three minutes, they have to double their data-center. <span onclick="goVideo(this)" class="timestamp">02:49</span></p>
+<p>So that's a large cost. <span onclick="goVideo(this)" class="timestamp">02:58</span></p>
+<p>So reducing such cost is very important. <span onclick="goVideo(this)" class="timestamp">03:01</span></p>
+<p>And let's see where is actually the energy consumed. <span onclick="goVideo(this)" class="timestamp">03:04</span></p>
+<p>The large model means lots of memory access. <span onclick="goVideo(this)" class="timestamp">03:08</span></p>
+<p>You have to access, load those models from the memory means more energy. <span onclick="goVideo(this)" class="timestamp">03:11</span></p>
+<p>If you look at how much energy is consumed by loading the memory versus how much is consumed by multiplications and add those arithmetic operations, the memory access is more than two or three orders of magnitude, more energy consuming than those arithmetic operations. <span onclick="goVideo(this)" class="timestamp">03:15</span></p>
+<p>So how to make deep learning more efficient. <span onclick="goVideo(this)" class="timestamp">03:40</span></p>
+<p>So we have to improve energy efficiency by this Algorithm and Hardware Co-Design. <span onclick="goVideo(this)" class="timestamp">03:43</span></p>
+<p>So this is the previous way, which is our hardware. <span onclick="goVideo(this)" class="timestamp">03:50</span></p>
+<p>For example, we have some benchmarks say Spec 2006 and then run those benchmarks and tune your CPU architectures for those benchmarks. <span onclick="goVideo(this)" class="timestamp">03:53</span></p>
+<p>Now what we should do is to open up the box to see what can we do from algorithm side first and see what is the optimum question mark processing unit. <span onclick="goVideo(this)" class="timestamp">04:06</span></p>
+<p>That breaks the boundary between the algorithm hardware to improve the overall efficiency. <span onclick="goVideo(this)" class="timestamp">04:15</span></p>
+<p>So today's talk, I'm going to have the following agenda. <span onclick="goVideo(this)" class="timestamp">04:26</span></p>
+<p>We are going to cover four aspects: The algorithm hardware and inference and training. <span onclick="goVideo(this)" class="timestamp">04:29</span></p>
+<p>So they form a small two by two matrix, so includes the algorithm for efficient inference, hardware for efficient inference and the algorithm for efficient training, and lastly, the hardware for efficient training. <span onclick="goVideo(this)" class="timestamp">04:36</span></p>
+<p>For example, I'm going to cover the TPU, I'm going to cover the Volta. <span onclick="goVideo(this)" class="timestamp">04:50</span></p>
+<p>But before I cover those things, let's have three slides for Hardware 101. <span onclick="goVideo(this)" class="timestamp">04:54</span></p>
+<p>A brief introduction of the families of hardware in such a tree. <span onclick="goVideo(this)" class="timestamp">05:02</span></p>
+<p>So in general, we can have roughly two branches. <span onclick="goVideo(this)" class="timestamp">05:07</span></p>
+<p>One is general purpose hardware. <span onclick="goVideo(this)" class="timestamp">05:11</span></p>
+<p>It can do any applications versus the specialized hardware, which is tuned for a specific kind of applications, a domain of applications. <span onclick="goVideo(this)" class="timestamp">05:14</span></p>
+<p>So the general purpose hardware includes, the CPU or the GPU, and their difference is that CPU is latency oriented, single threaded. <span onclick="goVideo(this)" class="timestamp">05:29</span></p>
+<p>It's like a big elephant. <span onclick="goVideo(this)" class="timestamp">05:38</span></p>
+<p>While the GPU is throughput oriented. <span onclick="goVideo(this)" class="timestamp">05:40</span></p>
+<p>It has many small though weak threads, but there are thousands of such small weak cores. <span onclick="goVideo(this)" class="timestamp">05:44</span></p>
+<p>Like a group of small ants, where there are so many ants. <span onclick="goVideo(this)" class="timestamp">05:49</span></p>
+<p>And specialized hardware, roughly there are FPGAs and ASICs. <span onclick="goVideo(this)" class="timestamp">05:54</span></p>
+<p>So FPGA stand for Field Programmable Gate Array. <span onclick="goVideo(this)" class="timestamp">05:59</span></p>
+<p>So it is programmable, hardware programmable so its logic can be changed. <span onclick="goVideo(this)" class="timestamp">06:03</span></p>
+<p>So it's cheaper for you to try new ideas and do prototype, but it's less efficient. <span onclick="goVideo(this)" class="timestamp">06:09</span></p>
+<p>It's in the middle between the general purpose and pure ASIC. <span onclick="goVideo(this)" class="timestamp">06:16</span></p>
+<p>So ASIC stands for Application Specific Integrated Circuit. <span onclick="goVideo(this)" class="timestamp">06:19</span></p>
+<p>It has a fixed logic, just designed for a certain application. <span onclick="goVideo(this)" class="timestamp">06:24</span></p>
+<p>For example deep learning. <span onclick="goVideo(this)" class="timestamp">06:27</span></p>
+<p>And Google's TPU is a kind of ASIC and the neural networks we train on, the earlier GPUs is here. <span onclick="goVideo(this)" class="timestamp">06:29</span></p>
+<p>And another slide for Hardware 101 is the number representations. <span onclick="goVideo(this)" class="timestamp">06:37</span></p>
+<p>So in this slide, I'm going to convey you the idea that all the numbers in computer are not represented by a real number. <span onclick="goVideo(this)" class="timestamp">06:43</span></p>
+<p>It's not a real number, but they are actually discrete. <span onclick="goVideo(this)" class="timestamp">06:51</span></p>
+<p>Even for those floating point with your 32 Bit. <span onclick="goVideo(this)" class="timestamp">06:54</span></p>
+<p>Floating point numbers, their resolution is not perfect. <span onclick="goVideo(this)" class="timestamp">06:57</span></p>
+<p>It's not continuous, but it's discrete. <span onclick="goVideo(this)" class="timestamp">07:02</span></p>
+<p>So for example FP32, meaning using a 32 bit to represent a floating point number. <span onclick="goVideo(this)" class="timestamp">07:06</span></p>
+<p>So there are three components in the representation. <span onclick="goVideo(this)" class="timestamp">07:12</span></p>
+<p>The sign bit, the exponent bit, the mantissa, and the number it represents is shown by minus 1 to the S times 1.M times 2 to the exponent. <span onclick="goVideo(this)" class="timestamp">07:15</span></p>
+<p>So similar there is FP16, using a 16 bit to represent a floating point number. <span onclick="goVideo(this)" class="timestamp">07:28</span></p>
+<p>In particular, I'm going to introduce Int8, where the core TPU use, using an integer to represent a fixed point number. <span onclick="goVideo(this)" class="timestamp">07:36</span></p>
+<p>So we have a certain number of bits for the integer. <span onclick="goVideo(this)" class="timestamp">07:44</span></p>
+<p>Followed by a radix point, if we put different layers. <span onclick="goVideo(this)" class="timestamp">07:47</span></p>
+<p>And lastly, the fractional bits. <span onclick="goVideo(this)" class="timestamp">07:50</span></p>
+<p>So why do we prefer those eight bit, or 16 bit rather than those traditional like the 32 bit floating point. <span onclick="goVideo(this)" class="timestamp">07:54</span></p>
+<p>That's the cost. <span onclick="goVideo(this)" class="timestamp">08:03</span></p>
+<p>So, I generated the figure from 45 nanometer technology about the energy cost versus the area cost for different operations. <span onclick="goVideo(this)" class="timestamp">08:04</span></p>
+<p>In particular, let's see here, go you from 32 bit to 16 bit, we have about four times reduction in energy and also about four times reduction in the area. <span onclick="goVideo(this)" class="timestamp">08:14</span></p>
+<p>Area means money. <span onclick="goVideo(this)" class="timestamp">08:28</span></p>
+<p>Every millimeter square takes money to take out a chip So it's very beneficial for hardware design to go from 32 bit to 16 bit. <span onclick="goVideo(this)" class="timestamp">08:30</span></p>
+<p>That's why you hear NVIDIA from Pascal Architecture, they said they're starting to support FP16. <span onclick="goVideo(this)" class="timestamp">08:41</span></p>
+<p>That's the reason why it's so beneficial. <span onclick="goVideo(this)" class="timestamp">08:49</span></p>
+<p>For example, previous battery level could last four hours, now it becomes 16 hours. <span onclick="goVideo(this)" class="timestamp">08:53</span></p>
+<p>That's what it means to reduce the energy cost by four times. <span onclick="goVideo(this)" class="timestamp">08:58</span></p>
+<p>But here still, there's a problem of large energy costs for reading the memory. <span onclick="goVideo(this)" class="timestamp">09:02</span></p>
+<p>And let's see how can we deal with this memory reference so expensive, how do we deal with this problem better? <span onclick="goVideo(this)" class="timestamp">09:08</span></p>
+<p>So let's switch gear and come to our topic directly. <span onclick="goVideo(this)" class="timestamp">09:16</span></p>
+<p>So let's first introduce algorithm for efficient inference. <span onclick="goVideo(this)" class="timestamp">09:19</span></p>
+<p>So I'm going to cover six topics, this is a really long slide. <span onclick="goVideo(this)" class="timestamp">09:24</span></p>
+<p>So I'm going to relatively fast. <span onclick="goVideo(this)" class="timestamp">09:27</span></p>
+<p>So the first idea I'm going to talk about is pruning. <span onclick="goVideo(this)" class="timestamp">09:31</span></p>
+<p>Pruning the neural networks. <span onclick="goVideo(this)" class="timestamp">09:34</span></p>
+<p>For example, this is original neural network. <span onclick="goVideo(this)" class="timestamp">09:36</span></p>
+<p>So what I'm trying to do is, can we remove some of the weight and still have the same accuracy? <span onclick="goVideo(this)" class="timestamp">09:39</span></p>
+<p>It's like pruning a tree, get rid of those redundant connections. <span onclick="goVideo(this)" class="timestamp">09:47</span></p>
+<p>This is first proposed by Professor Yann LeCun back in 1989, and I revisited this problem, 26 years later, on those modern deep neural nets to see how it works. <span onclick="goVideo(this)" class="timestamp">09:51</span></p>
+<p>So not all parameters are useful actually. <span onclick="goVideo(this)" class="timestamp">10:03</span></p>
+<p>For example, in this case, if you want to fit a single line, but you're using a quadratic term, apparently the 0.01 is a redundant parameter. <span onclick="goVideo(this)" class="timestamp">10:06</span></p>
+<p>So I'm going to train the connectivity first and then prune some of the connections. <span onclick="goVideo(this)" class="timestamp">10:15</span></p>
+<p>And then train the remaining weights, and through this process, it regulates. <span onclick="goVideo(this)" class="timestamp">10:20</span></p>
+<p>And as a result, I can reduce the number of connections, and annex that from 16 million parameters to only six million parameters, which is 10 times less the computation. <span onclick="goVideo(this)" class="timestamp">10:24</span></p>
+<p>So this is the accuracy. <span onclick="goVideo(this)" class="timestamp">10:37</span></p>
+<p>So the x-axis is how much parameters to prune away and the y-axis is the accuracy you have. <span onclick="goVideo(this)" class="timestamp">10:42</span></p>
+<p>So we want to have less parameters, but we also want to have the same accuracy as before. <span onclick="goVideo(this)" class="timestamp">10:49</span></p>
+<p>We don't want to sacrifice accuracy, For example at 80%, we locked zero away left 80% of the parameters, but accuracy jumped by 4%. <span onclick="goVideo(this)" class="timestamp">10:55</span></p>
+<p>That's intolerable. <span onclick="goVideo(this)" class="timestamp">11:08</span></p>
+<p>But the good thing is that if we retrain the remaining weights, the accuracy can fully recover here. <span onclick="goVideo(this)" class="timestamp">11:10</span></p>
+<p>And if we do this process iteratively by pruning and retraining, pruning and retraining, we can fully recover the accuracy not until we are prune away 90% of the parameters. <span onclick="goVideo(this)" class="timestamp">11:18</span></p>
+<p>So if you go back to home and try it on your Ipad or notebook, just zero away 50% of the parameters say you went on your homework, you will astonishingly find that accuracy actually doesn't hurt. <span onclick="goVideo(this)" class="timestamp">11:30</span></p>
+<p>So we just mentioned convolution neural nets, how about RNNs and LSTMs, so I tried with this neural talk. <span onclick="goVideo(this)" class="timestamp">11:45</span></p>
+<p>Again, pruning away 90% of the rates doesn't hurt the blue score. <span onclick="goVideo(this)" class="timestamp">11:52</span></p>
+<p>And here are some visualizations. <span onclick="goVideo(this)" class="timestamp">11:58</span></p>
+<p>For example, the original picture, the neural talk says a basketball player in a white uniform is playing with a ball. <span onclick="goVideo(this)" class="timestamp">12:00</span></p>
+<p>Versus pruning away 90% it says, a basketball player in a white uniform is playing with a basketball. <span onclick="goVideo(this)" class="timestamp">12:08</span></p>
+<p>And on and so on. <span onclick="goVideo(this)" class="timestamp">12:16</span></p>
+<p>But if you're too aggressive, say you prune away 95% of the weights, the network is going to get drunk. <span onclick="goVideo(this)" class="timestamp">12:19</span></p>
+<p>It says, a man in a red shirt and white and black shirt is running through a field. <span onclick="goVideo(this)" class="timestamp">12:28</span></p>
+<p>So there's really a limit, a threshold, you have to take care of during the pruning. <span onclick="goVideo(this)" class="timestamp">12:34</span></p>
+<p>So interestingly, after I did the work, did some resource and research and find actually the same pruning procedure actually happens to human brain as well. <span onclick="goVideo(this)" class="timestamp">12:41</span></p>
+<p>So when we were born, there are about 50 trillion synapses in the brain. <span onclick="goVideo(this)" class="timestamp">12:50</span></p>
+<p>And at one year old, this number surged into 1,000 trillion. <span onclick="goVideo(this)" class="timestamp">12:55</span></p>
+<p>And as we become adolescent, it becomes smaller actually, 500 trillion in the end, according to the study by Nature. <span onclick="goVideo(this)" class="timestamp">13:00</span></p>
+<p>So this is very interesting. <span onclick="goVideo(this)" class="timestamp">13:11</span></p>
+<p>And also, the pruning changed the weight distribution because we are removing those small connections and after we retrain them, that's why it becomes soft in the end. <span onclick="goVideo(this)" class="timestamp">13:13</span></p>
+<p>Yeah, question. <span onclick="goVideo(this)" class="timestamp">13:23</span></p>
+<p>- [Student] Are you trying to mean that it terms of your mixed weights during the training will be just set at zero and just start from scratch? <span onclick="goVideo(this)" class="timestamp">13:25</span></p>
+<p>And these start from the things that are at zero. <span onclick="goVideo(this)" class="timestamp">13:32</span></p>
+<p>- Yeah. <span onclick="goVideo(this)" class="timestamp">13:35</span></p>
+<p>So the question is, how do we deal with those zero connections?</p>
+<p>So we force them to be zero in all the other iterations. <span onclick="goVideo(this)" class="timestamp">13:39</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">13:45</span></p>
+<p>- [Student] How do you pick which rates to drop? <span onclick="goVideo(this)" class="timestamp">13:46</span></p>
+<p>- Yeah so very simple. <span onclick="goVideo(this)" class="timestamp">13:50</span></p>
+<p>Small weights, drop it, sort it.</p>
+<p>If it's small, just-- - [Student] Any threshold that I decide? <span onclick="goVideo(this)" class="timestamp">13:53</span></p>
+<p>- Exactly, yeah. <span onclick="goVideo(this)" class="timestamp">13:55</span></p>
+<p>So the next idea, weight sharing. <span onclick="goVideo(this)" class="timestamp">13:59</span></p>
+<p>So now we have, remember our end goal is to remove connections so that we can have less memory footprint so that we can have more energy efficient deployment. <span onclick="goVideo(this)" class="timestamp">14:01</span></p>
+<p>Now we have less number of parameters by pruning. <span onclick="goVideo(this)" class="timestamp">14:12</span></p>
+<p>We want to have less number of bits per parameter so they're multiplied together they get a small model. <span onclick="goVideo(this)" class="timestamp">14:15</span></p>
+<p>So the idea is like this. <span onclick="goVideo(this)" class="timestamp">14:23</span></p>
+<p>Not all numbers, not all the weights has to be the exact number. <span onclick="goVideo(this)" class="timestamp">14:26</span></p>
+<p>For example, 2.09, 2.12 or all these four weights, you just put them using 2.0 to represent them. <span onclick="goVideo(this)" class="timestamp">14:30</span></p>
+<p>That's enough. <span onclick="goVideo(this)" class="timestamp">14:39</span></p>
+<p>Otherwise too accurate number is just leads to overfitting. <span onclick="goVideo(this)" class="timestamp">14:41</span></p>
+<p>So the idea is I can cluster the weights if they are similar, just using a centroid to represent the number instead of using the full precision weight. <span onclick="goVideo(this)" class="timestamp">14:46</span></p>
+<p>So that every time I do the inference, I just do inference on this single number. <span onclick="goVideo(this)" class="timestamp">14:57</span></p>
+<p>For example, this is a four by four weight matrix in a certain layer. <span onclick="goVideo(this)" class="timestamp">15:03</span></p>
+<p>And what I'm going to do is do k-means clustering by having the similar weight sharing the same centroid. <span onclick="goVideo(this)" class="timestamp">15:09</span></p>
+<p>For example, 2.09, 2.12, I store index of three pointing to here. <span onclick="goVideo(this)" class="timestamp">15:15</span></p>
+<p>So that, the good thing is we need to only store the two bit index rather than the 32 bit, floating point number. <span onclick="goVideo(this)" class="timestamp">15:21</span></p>
+<p>That's 16 times saving. <span onclick="goVideo(this)" class="timestamp">15:29</span></p>
+<p>And how do we train such neural network? <span onclick="goVideo(this)" class="timestamp">15:34</span></p>
+<p>They are binded together, so after we get the gradient, we color them in the same pattern as the weight and then we do a group by operation by having all the in that weights with the same index grouped together. <span onclick="goVideo(this)" class="timestamp">15:37</span></p>
+<p>And then we do a reduction by summing them up. <span onclick="goVideo(this)" class="timestamp">15:52</span></p>
+<p>And then multiplied by the learning rate subtracted from the original centroid. <span onclick="goVideo(this)" class="timestamp">15:56</span></p>
+<p>That's one iteration of the SGD for such weight shared neural network. <span onclick="goVideo(this)" class="timestamp">16:00</span></p>
+<p>So remember previously, after pruning this is what the weight distribution like and after weight sharing, they become discrete. <span onclick="goVideo(this)" class="timestamp">16:08</span></p>
+<p>There are only 16 different values here, meaning we can use four bits to represent each number. <span onclick="goVideo(this)" class="timestamp">16:18</span></p>
+<p>And by training on such weight shared neural network, training on such extremely shared neural network, these weights can adjust. <span onclick="goVideo(this)" class="timestamp">16:26</span></p>
+<p>It is the subtle changes that compensated for the loss of accuracy. <span onclick="goVideo(this)" class="timestamp">16:34</span></p>
+<p>So let's see, this is the number of bits we give it, this is the accuracy for convolution layers. <span onclick="goVideo(this)" class="timestamp">16:41</span></p>
+<p>Not until four bits, does the accuracy begin to drop and for those fully connected layers, very astonishingly, it's not until two bits, only four number, does the accuracy begins to drop. <span onclick="goVideo(this)" class="timestamp">16:50</span></p>
+<p>And this result is per layer. <span onclick="goVideo(this)" class="timestamp">17:03</span></p>
+<p>So we have covered two methods, pruning and weight sharing. <span onclick="goVideo(this)" class="timestamp">17:08</span></p>
+<p>What if we combine these two methods together. <span onclick="goVideo(this)" class="timestamp">17:12</span></p>
+<p>Do they work well? <span onclick="goVideo(this)" class="timestamp">17:15</span></p>
+<p>So by combining those methods, this is the compression ratio with the smaller on the left. <span onclick="goVideo(this)" class="timestamp">17:16</span></p>
+<p>And this is the accuracy. <span onclick="goVideo(this)" class="timestamp">17:22</span></p>
+<p>We can combine it together and make the model about 3% of its original size without hurting the accuracy at all. <span onclick="goVideo(this)" class="timestamp">17:24</span></p>
+<p>Compared with the each working individual data by 10%, accuracy begins to drop. <span onclick="goVideo(this)" class="timestamp">17:33</span></p>
+<p>And compared with the cheap SVD method, this has a better compression ratio. <span onclick="goVideo(this)" class="timestamp">17:39</span></p>
+<p>And final idea is we can apply the Huffman Coding to use more number of bits for those infrequent numbers, infrequently appearing weights and less number of bits for those more frequently appearing weights. <span onclick="goVideo(this)" class="timestamp">17:46</span></p>
+<p>So by combining these three methods, pruning, weight sharing, and also Huffman Coding, we can compress the neural networks, state-of-the-art neural networks, ranging from 10x to 49x without hurting the prediction accuracy. <span onclick="goVideo(this)" class="timestamp">18:03</span></p>
+<p>Sometimes a little bit better. <span onclick="goVideo(this)" class="timestamp">18:21</span></p>
+<p>But maybe that is noise. <span onclick="goVideo(this)" class="timestamp">18:23</span></p>
+<p>So the next question is, these models are just pre-trained models by say Google, Microsoft. <span onclick="goVideo(this)" class="timestamp">18:25</span></p>
+<p>Can we make a compact model, a pump compact model to begin with? <span onclick="goVideo(this)" class="timestamp">18:33</span></p>
+<p>Even before such compression? <span onclick="goVideo(this)" class="timestamp">18:38</span></p>
+<p>So SqueezeNet, you may have already worked with this neural network model in a homework. <span onclick="goVideo(this)" class="timestamp">18:42</span></p>
+<p>So the idea is we are having a squeeze layer here to shield at the three by three convolution with fewer number of channels. <span onclick="goVideo(this)" class="timestamp">18:50</span></p>
+<p>So that's where squeeze comes from. <span onclick="goVideo(this)" class="timestamp">19:03</span></p>
+<p>And here we have two branches, rather than four branches as in the inception model. <span onclick="goVideo(this)" class="timestamp">19:06</span></p>
+<p>So as a result, the model is extremely compact. <span onclick="goVideo(this)" class="timestamp">19:13</span></p>
+<p>It doesn't have any fully connected layers. <span onclick="goVideo(this)" class="timestamp">19:16</span></p>
+<p>Everything is fully convolutional. <span onclick="goVideo(this)" class="timestamp">19:19</span></p>
+<p>The last layer is a global pooling. <span onclick="goVideo(this)" class="timestamp">19:20</span></p>
+<p>So what if we apply deep compression algorithm on such already compact model will it be getting even smaller? <span onclick="goVideo(this)" class="timestamp">19:27</span></p>
+<p>So this is AlexNet after compression, this is SqueezeNet. <span onclick="goVideo(this)" class="timestamp">19:38</span></p>
+<p>Even before compression, it's 50x smaller than AlexNet, but has the same accuracy. <span onclick="goVideo(this)" class="timestamp">19:42</span></p>
+<p>After compression 510x smaller, but the same accuracy only less than half a megabyte. <span onclick="goVideo(this)" class="timestamp">19:49</span></p>
+<p>This means it's very easy to fit such a small model on the cache, which is literally tens of megabyte SRAM. <span onclick="goVideo(this)" class="timestamp">20:00</span></p>
+<p>So what does it mean? <span onclick="goVideo(this)" class="timestamp">20:11</span></p>
+<p>It's possible to achieve speed up. <span onclick="goVideo(this)" class="timestamp">20:12</span></p>
+<p>So this is the speedup, I measured if all these fully connected layers only for now, on the CPU, GPU, and the mobile GPU, before pruning and after pruning the weights, and on average, I observed a 3x speedup in a CPU, about 3X speedup on the GPU, and roughly 5x speedup on the mobile GPU, which is a TK1. <span onclick="goVideo(this)" class="timestamp">20:15</span></p>
+<p>And so is the energy efficiency. <span onclick="goVideo(this)" class="timestamp">20:41</span></p>
+<p>In an average improvement from 3x to 6x on a CPU, GPU, and mobile GPU. <span onclick="goVideo(this)" class="timestamp">20:44</span></p>
+<p>And these ideas are used in these companies. <span onclick="goVideo(this)" class="timestamp">20:52</span></p>
+<p>Having talked about when pruning and when sharing, which is a non-linear quantization method and we're going to talk about quantization, which is, why do they use in the TPU design? <span onclick="goVideo(this)" class="timestamp">20:57</span></p>
+<p>All the TPU designs use at only eight bit for inference. <span onclick="goVideo(this)" class="timestamp">21:08</span></p>
+<p>And the way, how they can use that is because of the quantization. <span onclick="goVideo(this)" class="timestamp">21:12</span></p>
+<p>And let's see how does it work. <span onclick="goVideo(this)" class="timestamp">21:16</span></p>
+<p>So quantization has this complicated figure, but the intuition is very simple. <span onclick="goVideo(this)" class="timestamp">21:20</span></p>
+<p>You run the neural network and train it with the normal floating point numbers. <span onclick="goVideo(this)" class="timestamp">21:26</span></p>
+<p>And quantize the weight and activations by gather the statistics for each layer. <span onclick="goVideo(this)" class="timestamp">21:33</span></p>
+<p>For example, what is the maximum number, minimum number, and how many bits are enough to represent this dynamic range. <span onclick="goVideo(this)" class="timestamp">21:39</span></p>
+<p>Then you use that number of bits for the integer part and the rest of the eight bit or seven bit for the other part of the 8 bit representation. <span onclick="goVideo(this)" class="timestamp">21:47</span></p>
+<p>And also we can fine tune in the floating point format. <span onclick="goVideo(this)" class="timestamp">22:00</span></p>
+<p>Or we can also use feed forward with fixed point and back propagation with update with the floating point number. <span onclick="goVideo(this)" class="timestamp">22:05</span></p>
+<p>There are lots of different ideas to have better accuracy. <span onclick="goVideo(this)" class="timestamp">22:12</span></p>
+<p>And this is the result, for how many number of bits versus what is the accuracy. <span onclick="goVideo(this)" class="timestamp">22:17</span></p>
+<p>For example, using a fixed, 8 bit, the accuracy for GoogleNet doesn't drop significantly. <span onclick="goVideo(this)" class="timestamp">22:23</span></p>
+<p>And for VGG-16, it also remains pretty well for the accuracy. <span onclick="goVideo(this)" class="timestamp">22:28</span></p>
+<p>While circling down to a six bit, the accuracy begins to drop pretty dramatically. <span onclick="goVideo(this)" class="timestamp">22:34</span></p>
+<p>Next idea, low rank approximation. <span onclick="goVideo(this)" class="timestamp">22:41</span></p>
+<p>It turned out that for a convolution layer, you can break it into two convolution layers. <span onclick="goVideo(this)" class="timestamp">22:47</span></p>
+<p>One convolution here, followed by a one by one convolution. <span onclick="goVideo(this)" class="timestamp">22:55</span></p>
+<p>So that it's like you break a complicated problem into two separate small problems. <span onclick="goVideo(this)" class="timestamp">22:59</span></p>
+<p>This is for convolution layer. <span onclick="goVideo(this)" class="timestamp">23:05</span></p>
+<p>As we can see, achieving about 2x speedup, there's almost no loss of accuracy. <span onclick="goVideo(this)" class="timestamp">23:07</span></p>
+<p>And achieving a speedup of 5x, roughly a 6% loss of accuracy. <span onclick="goVideo(this)" class="timestamp">23:14</span></p>
+<p>And this also works for fully connected layers. <span onclick="goVideo(this)" class="timestamp">23:21</span></p>
+<p>The simplest idea is using the SVD to break it into one matrix into two matrices. <span onclick="goVideo(this)" class="timestamp">23:24</span></p>
+<p>And follow this idea, this paper proposes to use the Tensor Tree to break down one fully connected layer into a tree, lots of fully connected layers. <span onclick="goVideo(this)" class="timestamp">23:30</span></p>
+<p>That's why it's called a tree. <span onclick="goVideo(this)" class="timestamp">23:43</span></p>
+<p>So going even more crazy, can we use only two weights or three weights to represent a neural network? <span onclick="goVideo(this)" class="timestamp">23:49</span></p>
+<p>A ternary weight or a binary weight. <span onclick="goVideo(this)" class="timestamp">23:56</span></p>
+<p>We already seen this distribution before, after pruning. <span onclick="goVideo(this)" class="timestamp">23:59</span></p>
+<p>There's some positive weights and negative weights. <span onclick="goVideo(this)" class="timestamp">24:02</span></p>
+<p>Can we just use three numbers, just use one, minus one, zero to represent the neural network. <span onclick="goVideo(this)" class="timestamp">24:04</span></p>
+<p>This is our recent paper clear that we maintain a full precision weight during training time, but at inference time, we only keep the scaling factor and the ternary weight. <span onclick="goVideo(this)" class="timestamp">24:12</span></p>
+<p>So during inference, we only need three weights. <span onclick="goVideo(this)" class="timestamp">24:26</span></p>
+<p>That's very efficient and making the model very small. <span onclick="goVideo(this)" class="timestamp">24:30</span></p>
+<p>This is the proportion of the positive zero and negative weights, they can change during the training. <span onclick="goVideo(this)" class="timestamp">24:35</span></p>
+<p>So is their absolute value. <span onclick="goVideo(this)" class="timestamp">24:41</span></p>
+<p>And this is the visualization of kernels by this trained ternary quantization. <span onclick="goVideo(this)" class="timestamp">24:46</span></p>
+<p>We can see some of them are a corner detector like here. <span onclick="goVideo(this)" class="timestamp">24:53</span></p>
+<p>And also here. <span onclick="goVideo(this)" class="timestamp">24:59</span></p>
+<p>Some of them are maybe edge detector. <span onclick="goVideo(this)" class="timestamp">25:00</span></p>
+<p>For example, this filter some of them are corner detector like here this filter. <span onclick="goVideo(this)" class="timestamp">25:03</span></p>
+<p>Actually we don't need such fine grain resolution. <span onclick="goVideo(this)" class="timestamp">25:09</span></p>
+<p>Just three weights are enough. <span onclick="goVideo(this)" class="timestamp">25:12</span></p>
+<p>So this is the validation accuracy on ImageNet with AlexNet. <span onclick="goVideo(this)" class="timestamp">25:15</span></p>
+<p>So the threshline is the baseline accuracy with floating point 32. <span onclick="goVideo(this)" class="timestamp">25:21</span></p>
+<p>And the red line is our result. <span onclick="goVideo(this)" class="timestamp">25:26</span></p>
+<p>Pretty much the same accuracy converged compared with the full precision weights. <span onclick="goVideo(this)" class="timestamp">25:29</span></p>
+<p>Last idea, Winograd Transformation. <span onclick="goVideo(this)" class="timestamp">25:40</span></p>
+<p>So this about how do we implement deep neural nets, how do we implement the convolutions. <span onclick="goVideo(this)" class="timestamp">25:44</span></p>
+<p>So this is the conventional direct convolution implementation method. <span onclick="goVideo(this)" class="timestamp">25:50</span></p>
+<p>The slide credited to Julien, a friend from Nvidia. <span onclick="goVideo(this)" class="timestamp">25:55</span></p>
+<p>So originally, we just do the element wise do a dot product for those nine elements in the filter and nine elements in the image and then sum it up. <span onclick="goVideo(this)" class="timestamp">25:58</span></p>
+<p>For example, for every output we need nine times C number of multiplication and adds. <span onclick="goVideo(this)" class="timestamp">26:10</span></p>
+<p>Winograd Convolution is another method, equivalent method. <span onclick="goVideo(this)" class="timestamp">26:19</span></p>
+<p>It's not lost, it's an equivalent method proposed at first through this paper, Fast Algorithms for Convolution Neural Networks. <span onclick="goVideo(this)" class="timestamp">26:27</span></p>
+<p>That instead of directly doing the convolution, move it one by one, at first it transforms the input feature map to another feature map. <span onclick="goVideo(this)" class="timestamp">26:35</span></p>
+<p>Which contains only the weight, contains only 1, 0.5, 2 that can efficiently implement it with shift. <span onclick="goVideo(this)" class="timestamp">26:47</span></p>
+<p>And also transform the filter into a four by four tensor. <span onclick="goVideo(this)" class="timestamp">26:56</span></p>
+<p>So what we are going to do here is sum over c and do an element-wise element-wise product. <span onclick="goVideo(this)" class="timestamp">27:02</span></p>
+<p>So there are only 16 multiplications happening here. <span onclick="goVideo(this)" class="timestamp">27:08</span></p>
+<p>And then we do a inverse transform to get four outputs. <span onclick="goVideo(this)" class="timestamp">27:13</span></p>
+<p>So the transform and the inverse transform can be amortized and the multiplications, whether it can ignored. <span onclick="goVideo(this)" class="timestamp">27:18</span></p>
+<p>So in order to get four output, we need nine times channel times four, which is 36 times channel. <span onclick="goVideo(this)" class="timestamp">27:24</span></p>
+<p>Multiplications originally for the direct convolution but now we need 16 times C of our output So that is 2.25x less number of multiplications to perform the exact same multiplication. <span onclick="goVideo(this)" class="timestamp">27:34</span></p>
+<p>And here is a speedup. <span onclick="goVideo(this)" class="timestamp">27:58</span></p>
+<p>2.25x, so theoretically, 2.25x speedup and in real, from cuDNN 5 they incorporated such Winograd Convolution algorithm. <span onclick="goVideo(this)" class="timestamp">27:59</span></p>
+<p>This is on the VGG net I believe, the speedup is roughly 1.7 to 2x speedup. <span onclick="goVideo(this)" class="timestamp">28:14</span></p>
+<p>Pretty significant. <span onclick="goVideo(this)" class="timestamp">28:23</span></p>
+<p>And after cuDNN 5, the cuDNN begins to use the Winograd Convolution algorithm. <span onclick="goVideo(this)" class="timestamp">28:27</span></p>
+<p>Okay, so far we have covered those efficient algorithms for efficient inference. <span onclick="goVideo(this)" class="timestamp">28:38</span></p>
+<p>We covered pruning, weight sharing, quantization, and also Winograd binary and ternary. <span onclick="goVideo(this)" class="timestamp">28:45</span></p>
+<p>So now let's see what is the optimal hardware for those efficient inference? <span onclick="goVideo(this)" class="timestamp">28:53</span></p>
+<p>And what is a Google TPU? <span onclick="goVideo(this)" class="timestamp">29:00</span></p>
+<p>So there are a wide range of domain specific architectures or ASICS for deep neural networks. <span onclick="goVideo(this)" class="timestamp">29:05</span></p>
+<p>They have a common goal is to minimize the memory access to save power. <span onclick="goVideo(this)" class="timestamp">29:14</span></p>
+<p>For example the Eyeriss from MIT by using the RS Dataflow to minimize the off chip direct access. <span onclick="goVideo(this)" class="timestamp">29:20</span></p>
+<p>And DaDiannao from China Academy of Science, buffered all the weights on chip DRAM instead of having to go to off-chip DRAM. <span onclick="goVideo(this)" class="timestamp">29:28</span></p>
+<p>So the TPU from Google is using eight bit integer to represent the numbers. <span onclick="goVideo(this)" class="timestamp">29:37</span></p>
+<p>And at Stanford I proposed the EIE architecture that support those compressed and sparse deep neural network inference. <span onclick="goVideo(this)" class="timestamp">29:44</span></p>
+<p>So this is what the TPU looks like. <span onclick="goVideo(this)" class="timestamp">29:53</span></p>
+<p>It's actually smartly, can be put into the disk drive up to four cards per server. <span onclick="goVideo(this)" class="timestamp">29:56</span></p>
+<p>And this is the high-level architecture for the Google TPU. <span onclick="goVideo(this)" class="timestamp">30:06</span></p>
+<p>Don't be overwhelmed, it's actually, the kernel part here, is this giant matrix multiplication unit. <span onclick="goVideo(this)" class="timestamp">30:12</span></p>
+<p>So it's a 256 by 256 matrix multiplication unit. <span onclick="goVideo(this)" class="timestamp">30:23</span></p>
+<p>So in one single cycle, it can perform 64 kilo those number of multiplication and accumulate operations. <span onclick="goVideo(this)" class="timestamp">30:28</span></p>
+<p>So running 700 Megahertz, the throughput is 92 Teraops per second because it's actually integer operation. <span onclick="goVideo(this)" class="timestamp">30:41</span></p>
+<p>So we just about 25x as GPU and more than 100x at the CPU. <span onclick="goVideo(this)" class="timestamp">30:55</span></p>
+<p>And notice, TPU has a really large software-managed on-chip buffer. <span onclick="goVideo(this)" class="timestamp">31:01</span></p>
+<p>It is 24 megabytes. <span onclick="goVideo(this)" class="timestamp">31:09</span></p>
+<p>The cache for the CPU the L3 cache is already 16 megabytes. <span onclick="goVideo(this)" class="timestamp">31:13</span></p>
+<p>This is 24 megabytes which is pretty large. <span onclick="goVideo(this)" class="timestamp">31:19</span></p>
+<p>And it's powered by two DDR3 DRAM channels. <span onclick="goVideo(this)" class="timestamp">31:24</span></p>
+<p>So this is a little weak because the bandwidth is only 30 gigabytes per second compared with the most recent GPU that HBM, 900 Gigabytes per second. <span onclick="goVideo(this)" class="timestamp">31:28</span></p>
+<p>The DDR4 is released in 2014, so that makes sense because the design is a little during that day, used the DDR3. <span onclick="goVideo(this)" class="timestamp">31:47</span></p>
+<p>But if you're using DDR4 or even high-bandwidth memory, the performance can be even boosted. <span onclick="goVideo(this)" class="timestamp">31:55</span></p>
+<p>So this is a comparison about Google's TPU compared with the CPU, GPU of this K80 GPU by the way, and the TPU. <span onclick="goVideo(this)" class="timestamp">32:05</span></p>
+<p>So the area is pretty much smaller, like half the size of a CPU and GPU and the power consumption is roughly 75 watts. <span onclick="goVideo(this)" class="timestamp">32:15</span></p>
+<p>And see this number, the peak teraops per second is much higher than the CPU and GPU is, about 90 teraops per second, which is pretty high. <span onclick="goVideo(this)" class="timestamp">32:28</span></p>
+<p>So here is a workload. <span onclick="goVideo(this)" class="timestamp">32:42</span></p>
+<p>Thanks to David sharing the slide. <span onclick="goVideo(this)" class="timestamp">32:44</span></p>
+<p>This is the workload at Google. <span onclick="goVideo(this)" class="timestamp">32:47</span></p>
+<p>They did a benchmark on these TPUs. <span onclick="goVideo(this)" class="timestamp">32:51</span></p>
+<p>So it's a little interesting that convolution neural nets only account for 5% of data-center workload. <span onclick="goVideo(this)" class="timestamp">32:54</span></p>
+<p>Most of them is multilayer perception, those fully connected layers. <span onclick="goVideo(this)" class="timestamp">33:03</span></p>
+<p>About 61% maybe for ads, I'm not sure. <span onclick="goVideo(this)" class="timestamp">33:08</span></p>
+<p>And about 29% of the workload in data-center is the Long Short Term Memory. <span onclick="goVideo(this)" class="timestamp">33:12</span></p>
+<p>For example, speech recognition, or machine translation, I suspect. <span onclick="goVideo(this)" class="timestamp">33:18</span></p>
+<p>Remember just now we have seen there are 90 teraops per second. <span onclick="goVideo(this)" class="timestamp">33:28</span></p>
+<p>But what actually number of teraops per second can be achieved? <span onclick="goVideo(this)" class="timestamp">33:33</span></p>
+<p>This is a basic tool to measure the bottleneck of a computer system. <span onclick="goVideo(this)" class="timestamp">33:39</span></p>
+<p>Whether you are bottlenecked by the arithmetic or you are bottlenecked by the memory bandwidth. <span onclick="goVideo(this)" class="timestamp">33:45</span></p>
+<p>It's like if you have a bucket, the lowest part of the bucket determines how much water we can hold in the bucket. <span onclick="goVideo(this)" class="timestamp">33:53</span></p>
+<p>So in this region, you are bottlenecked by the memory bandwidth. <span onclick="goVideo(this)" class="timestamp">34:01</span></p>
+<p>So the x-axis is the arithmetic intensity. <span onclick="goVideo(this)" class="timestamp">34:07</span></p>
+<p>Which is number of floating point operations per byte the ratio between the computation and memory of bandwidth overhead. <span onclick="goVideo(this)" class="timestamp">34:13</span></p>
+<p>So the y-axis, is the actual attainable performance. <span onclick="goVideo(this)" class="timestamp">34:26</span></p>
+<p>Here is the peak performance for example. <span onclick="goVideo(this)" class="timestamp">34:32</span></p>
+<p>When you do a lot of operation after you fetch a single piece of data, if you can do a lot of operation on top of it, then you are bottlenecked by the arithmetic. <span onclick="goVideo(this)" class="timestamp">34:36</span></p>
+<p>But after you fetch a lot of data from the memory, but you just do a tiny little bit of arithmetic, then you will be bottlenecked by the memory bandwidth. <span onclick="goVideo(this)" class="timestamp">34:46</span></p>
+<p>So how much you can fetch from the memory determines how much real performance you can get. <span onclick="goVideo(this)" class="timestamp">35:00</span></p>
+<p>And remember there is a ratio. <span onclick="goVideo(this)" class="timestamp">35:08</span></p>
+<p>When it is one here, this region it happens to be the same as the turning point is the actual memory bandwidth of your system. <span onclick="goVideo(this)" class="timestamp">35:10</span></p>
+<p>So let's see what is the life for the TPU. <span onclick="goVideo(this)" class="timestamp">35:21</span></p>
+<p>The TPU's peak performance is really high, about 90 Tops per second. <span onclick="goVideo(this)" class="timestamp">35:24</span></p>
+<p>For those convolution nets, they are pretty much saturating the peak performance. <span onclick="goVideo(this)" class="timestamp">35:30</span></p>
+<p>But there are lot of neural networks that has a utlitization less than 10%, meaning that 90 T-ops per second is actually achieves about three to 12 T-ops per second in real case. <span onclick="goVideo(this)" class="timestamp">35:41</span></p>
+<p>But why is it like that? <span onclick="goVideo(this)" class="timestamp">36:03</span></p>
+<p>The reason is, in order to have those real-time guarantee that the user not wait for too long, you cannot batch a lot of user's images or speech voice data at the same time. <span onclick="goVideo(this)" class="timestamp">36:05</span></p>
+<p>So as a result, for those fully connect layers, they have very little reuse, so they are bottlenecked by the memory bandwidth. <span onclick="goVideo(this)" class="timestamp">36:19</span></p>
+<p>For those convolution neural nets, for example this one, this blue one, that achieve 86, which is CNN0. <span onclick="goVideo(this)" class="timestamp">36:31</span></p>
+<p>The ratio between the ops and the number of memory is the highest. <span onclick="goVideo(this)" class="timestamp">36:42</span></p>
+<p>It's pretty high, more than 2,000 compared with other multilayer perceptron or long short term memory the ratio is pretty low. <span onclick="goVideo(this)" class="timestamp">36:51</span></p>
+<p>So this figure compares, this is the TPU and this one is the CPU, this is the GPU. <span onclick="goVideo(this)" class="timestamp">37:04</span></p>
+<p>Here is memory bandwidth, the peak memory bandwidth at a ratio of one here. <span onclick="goVideo(this)" class="timestamp">37:13</span></p>
+<p>So TPU has the highest memory bandwidth. <span onclick="goVideo(this)" class="timestamp">37:17</span></p>
+<p>And here is where are these neural networks lie on this curve. <span onclick="goVideo(this)" class="timestamp">37:20</span></p>
+<p>So the asterisk is for the TPU. <span onclick="goVideo(this)" class="timestamp">37:26</span></p>
+<p>It's still higher than other dots, but if you're not comfortable with this log scale figure, this is what it's like putting it in linear roofline. <span onclick="goVideo(this)" class="timestamp">37:28</span></p>
+<p>So pretty much everything disappeared except for the TPU results. <span onclick="goVideo(this)" class="timestamp">37:43</span></p>
+<p>So still, all these lines, although they are higher than the CPU and GPU, it's still way below the theoretical peak operations per second. <span onclick="goVideo(this)" class="timestamp">37:51</span></p>
+<p>So as I mentioned before, it is really bottlenecked by the low latency requirement so that it can have a large batch size. <span onclick="goVideo(this)" class="timestamp">38:06</span></p>
+<p>That's why you have low operations per byte. <span onclick="goVideo(this)" class="timestamp">38:13</span></p>
+<p>And how do you solve this problem? <span onclick="goVideo(this)" class="timestamp">38:16</span></p>
+<p>You want to have less number of memory footprint so that it can reduce the memory bandwidth requirement. <span onclick="goVideo(this)" class="timestamp">38:18</span></p>
+<p>One solution is to compress the model and the challenge is how do we build a hardware that can do inference directly on the compressed model? <span onclick="goVideo(this)" class="timestamp">38:27</span></p>
+<p>So I'm going to introduce my design of EIE, the Efficient Inference Engine, which deals with those sparse and the compressed model to save the memory bandwidth. <span onclick="goVideo(this)" class="timestamp">38:38</span></p>
+<p>And the rule of thumb, like we mentioned before is taking out one bit of sparsity first. <span onclick="goVideo(this)" class="timestamp">38:49</span></p>
+<p>Anything times zero is zero. <span onclick="goVideo(this)" class="timestamp">38:53</span></p>
+<p>So don't store it, don't compute on it. <span onclick="goVideo(this)" class="timestamp">38:56</span></p>
+<p>And second idea is, you don't need that much full precision, but you can approximate it. <span onclick="goVideo(this)" class="timestamp">38:59</span></p>
+<p>So by taking advantage of the sparse weight, we get about a 10x saving in the computation, 5x less memory footprint. <span onclick="goVideo(this)" class="timestamp">39:06</span></p>
+<p>The 2x difference is due to index overhead. <span onclick="goVideo(this)" class="timestamp">39:16</span></p>
+<p>And by taking advantage of the sparse activation, meaning after bandwidth, if activation is zero, then ignore it. <span onclick="goVideo(this)" class="timestamp">39:19</span></p>
+<p>You save another 3x of computation. <span onclick="goVideo(this)" class="timestamp">39:27</span></p>
+<p>And then by such weight sharing mechanism, you can use four bits to represent each weight rather than 32 bit. <span onclick="goVideo(this)" class="timestamp">39:32</span></p>
+<p>That's another eight times saving in the memory footprint. <span onclick="goVideo(this)" class="timestamp">39:41</span></p>
+<p>So this is physically, logically how the weights are stored. <span onclick="goVideo(this)" class="timestamp">39:48</span></p>
+<p>A four by eight matrix, and this is how physically they are stored. <span onclick="goVideo(this)" class="timestamp">39:51</span></p>
+<p>Only the non-zero weights are stored. <span onclick="goVideo(this)" class="timestamp">39:57</span></p>
+<p>So you don't need to store those zeroes. <span onclick="goVideo(this)" class="timestamp">40:02</span></p>
+<p>You'll save the bandwidth fetching those zeroes. <span onclick="goVideo(this)" class="timestamp">40:04</span></p>
+<p>And also I'm using the relative index to further save the number of memory overhead. <span onclick="goVideo(this)" class="timestamp">40:07</span></p>
+<p>So in the computation like this figure shows, we are running the multiplication only on non-zero. <span onclick="goVideo(this)" class="timestamp">40:21</span></p>
+<p>If it's zero, then skip it. <span onclick="goVideo(this)" class="timestamp">40:31</span></p>
+<p>Only broadcast it to the non-zero weights and if it is zero, skip it. <span onclick="goVideo(this)" class="timestamp">40:34</span></p>
+<p>If it's a non-zero, do the multiplication. <span onclick="goVideo(this)" class="timestamp">40:42</span></p>
+<p>In another cycle, do the multiplication. <span onclick="goVideo(this)" class="timestamp">40:45</span></p>
+<p>So the idea is anything multiplied by zero is zero. <span onclick="goVideo(this)" class="timestamp">40:48</span></p>
+<p>So this is a little complicated, I'm going to go very quickly. <span onclick="goVideo(this)" class="timestamp">40:54</span></p>
+<p>I'm going to have a lookup table that decode the four bit weight into the 16 bit weight and using the four bit relative index passed through address accumulator to get the 16 bit absolute index. <span onclick="goVideo(this)" class="timestamp">40:58</span></p>
+<p>And this is what the hardware architecture like in the high level. <span onclick="goVideo(this)" class="timestamp">41:11</span></p>
+<p>You can feel free to refer to my paper for detail. <span onclick="goVideo(this)" class="timestamp">41:15</span></p>
+<p>Okay speedup. <span onclick="goVideo(this)" class="timestamp">41:19</span></p>
+<p>So using such efficient hardware architecture and also model compression, this is the original result we have seen for CPU, GPU, mobile GPU. <span onclick="goVideo(this)" class="timestamp">41:21</span></p>
+<p>Now EIE is here. <span onclick="goVideo(this)" class="timestamp">41:32</span></p>
+<p>189 times faster than the CPU and about 13 times faster than the GPU. <span onclick="goVideo(this)" class="timestamp">41:34</span></p>
+<p>So this is the energy efficiency on the log scale, it's about 24,000x more energy efficient than a CPU and about 3000x more energy efficient than a GPU. <span onclick="goVideo(this)" class="timestamp">41:43</span></p>
+<p>It means for example, previously if your battery can last for one hour, now it can last for 3000 hours for example. <span onclick="goVideo(this)" class="timestamp">41:55</span></p>
+<p>So if you say, ASIC is always better than CPUs and GPUs because it's customized hardware. <span onclick="goVideo(this)" class="timestamp">42:06</span></p>
+<p>So this is comparing EIE with the peer ASIC, for example DaDianNao and the TrueNorth. <span onclick="goVideo(this)" class="timestamp">42:12</span></p>
+<p>It has a better throughput, better energy efficiency by order of magnitude, compared with other ASICs. <span onclick="goVideo(this)" class="timestamp">42:20</span></p>
+<p>Not to mention that CPU, GPU and FPGAs. <span onclick="goVideo(this)" class="timestamp">42:28</span></p>
+<p>So we have covered half of the journey. <span onclick="goVideo(this)" class="timestamp">42:33</span></p>
+<p>We mentioned inference, we pretty much covered everything for inference. <span onclick="goVideo(this)" class="timestamp">42:37</span></p>
+<p>Now we are going to switch gear and talk about training. <span onclick="goVideo(this)" class="timestamp">42:41</span></p>
+<p>How do we train neural networks efficiently, how do we train it faster? <span onclick="goVideo(this)" class="timestamp">42:44</span></p>
+<p>So again, we are starting with algorithm first, efficient algorithms followed by the hardware for efficient training. <span onclick="goVideo(this)" class="timestamp">42:48</span></p>
+<p>So for efficient training algorithms, I'm going to mention four topics. <span onclick="goVideo(this)" class="timestamp">43:00</span></p>
+<p>The first one is parallelization, and then mixed precision training, which was just released about one month ago and at NVIDIA GTC, so it's fresh knowledge. <span onclick="goVideo(this)" class="timestamp">43:04</span></p>
+<p>And then model distillation, followed by my work on Dense-Sparse-Dense training, or better Regularization technique. <span onclick="goVideo(this)" class="timestamp">43:15</span></p>
+<p>So let's start with parallelization. <span onclick="goVideo(this)" class="timestamp">43:22</span></p>
+<p>So this figure shows, anyone in the hardware community. <span onclick="goVideo(this)" class="timestamp">43:26</span></p>
+<p>Most are very familiar with this figure. <span onclick="goVideo(this)" class="timestamp">43:29</span></p>
+<p>So as time goes by, what is the trend? <span onclick="goVideo(this)" class="timestamp">43:31</span></p>
+<p>For the number of transistors is keeping increasing. <span onclick="goVideo(this)" class="timestamp">43:35</span></p>
+<p>But the single threaded performance is getting plateaued in recent years. <span onclick="goVideo(this)" class="timestamp">43:38</span></p>
+<p>And also the frequency is getting plateaued in recent years. <span onclick="goVideo(this)" class="timestamp">43:44</span></p>
+<p>Because of the power constraint, to stop not scaling. <span onclick="goVideo(this)" class="timestamp">43:48</span></p>
+<p>And interesting thing is the number of cores is increasing. <span onclick="goVideo(this)" class="timestamp">43:52</span></p>
+<p>So what we really need to do is parallelization. <span onclick="goVideo(this)" class="timestamp">43:57</span></p>
+<p>How do we parallelize the problem to take advantage of parallel processing? <span onclick="goVideo(this)" class="timestamp">44:00</span></p>
+<p>Actually there are a lot of opportunities for parallelism in deep neural networks. <span onclick="goVideo(this)" class="timestamp">44:05</span></p>
+<p>For example, we can do data parallel. <span onclick="goVideo(this)" class="timestamp">44:12</span></p>
+<p>For example, feeding two images into the same model and run them at the same time. <span onclick="goVideo(this)" class="timestamp">44:15</span></p>
+<p>This doesn't affect latency for a single input. <span onclick="goVideo(this)" class="timestamp">44:23</span></p>
+<p>It doesn't make it shorter, but it makes batch size larger basically if you have four machines our effective batch size becomes four times as before. <span onclick="goVideo(this)" class="timestamp">44:26</span></p>
+<p>So it requires the coordinated weight update. <span onclick="goVideo(this)" class="timestamp">44:38</span></p>
+<p>For example, this is a paper from Google. <span onclick="goVideo(this)" class="timestamp">44:42</span></p>
+<p>There is a parameter server as a master and a couple of slaves running their own piece of training data and update the gradient to the parameter server and get the updated weight for them individually, that's how data parallelism is handled. <span onclick="goVideo(this)" class="timestamp">44:46</span></p>
+<p>Another idea is there could be a model parallelism. <span onclick="goVideo(this)" class="timestamp">45:11</span></p>
+<p>You can sublet your model and handle it to different processors or different threads. <span onclick="goVideo(this)" class="timestamp">45:14</span></p>
+<p>For example, there's this image, you want to run convolution on this image that is six dimension for loop. <span onclick="goVideo(this)" class="timestamp">45:21</span></p>
+<p>What you can do is you can cut the input image by two by two blocks so that each thread, or each processor handles one fourth of the image. <span onclick="goVideo(this)" class="timestamp">45:30</span></p>
+<p>Although there's a small halo here in between you have to take care of. <span onclick="goVideo(this)" class="timestamp">45:42</span></p>
+<p>And also, you can parallelize by the output or input feature map. <span onclick="goVideo(this)" class="timestamp">45:48</span></p>
+<p>And for those fully connect layers, how do we parallelize the model? <span onclick="goVideo(this)" class="timestamp">45:54</span></p>
+<p>It's even simpler. <span onclick="goVideo(this)" class="timestamp">45:58</span></p>
+<p>You can cut the model into half and hand it to different threads. <span onclick="goVideo(this)" class="timestamp">45:59</span></p>
+<p>And the third idea, you can even do hyper-parameter parallel. <span onclick="goVideo(this)" class="timestamp">46:06</span></p>
+<p>For example, you can tune your learning rate, your weight decay for different machines for those coarse-grained parallelism. <span onclick="goVideo(this)" class="timestamp">46:09</span></p>
+<p>So there are so many alternatives you have to tune. <span onclick="goVideo(this)" class="timestamp">46:16</span></p>
+<p>Small summary of the parallelism. <span onclick="goVideo(this)" class="timestamp">46:20</span></p>
+<p>There are lots of parallelisms in deep neural networks. <span onclick="goVideo(this)" class="timestamp">46:23</span></p>
+<p>For example, with data parallelism, you can run multiple training images, but you cannot have unlimited number of processors because you are limited by batch size. <span onclick="goVideo(this)" class="timestamp">46:27</span></p>
+<p>If it's too large, stochastic gradient descent becomes gradient descent, that's not good. <span onclick="goVideo(this)" class="timestamp">46:38</span></p>
+<p>You can also run the model parallelism. <span onclick="goVideo(this)" class="timestamp">46:44</span></p>
+<p>Split the model, either by cutting the image or cutting the convolution weights. <span onclick="goVideo(this)" class="timestamp">46:47</span></p>
+<p>Either cutting the image or cutting the fully connected layers. <span onclick="goVideo(this)" class="timestamp">46:58</span></p>
+<p>So it's very easy to get 16 to 64 GPUs training one model in parallel, having very good speedup. <span onclick="goVideo(this)" class="timestamp">47:03</span></p>
+<p>Almost linear speedup. <span onclick="goVideo(this)" class="timestamp">47:10</span></p>
+<p>Okay, next interesting thing, mixed precision with FP16 or FP32. <span onclick="goVideo(this)" class="timestamp">47:13</span></p>
+<p>So remember in the beginning of this lecture, I had a chart showing the energy and area overhead for a 16 bit versus a 32 bit. <span onclick="goVideo(this)" class="timestamp">47:21</span></p>
+<p>Going from 32 bit to 16 bit, you save about 4x the energy and 4x the area. <span onclick="goVideo(this)" class="timestamp">47:31</span></p>
+<p>So can we train a deep neural network with such low precision with floating point 16 bit rather than 32 bit? <span onclick="goVideo(this)" class="timestamp">47:40</span></p>
+<p>It turns out we can do that partially. <span onclick="goVideo(this)" class="timestamp">47:47</span></p>
+<p>By partially, I mean we need FP32 in some places. <span onclick="goVideo(this)" class="timestamp">47:53</span></p>
+<p>And where are those places? <span onclick="goVideo(this)" class="timestamp">47:58</span></p>
+<p>So we can do the multiplication in 16 bit as input. <span onclick="goVideo(this)" class="timestamp">48:01</span></p>
+<p>And then we have to do the summation in 32 bit accumulation. <span onclick="goVideo(this)" class="timestamp">48:07</span></p>
+<p>And then convert the result to 32 bit to store the weight. <span onclick="goVideo(this)" class="timestamp">48:13</span></p>
+<p>So that's where the mixed precision comes from. <span onclick="goVideo(this)" class="timestamp">48:18</span></p>
+<p>So for example, we have a master weight stored in floating point 32, we down converted it to floating point 16 and then we do the feed forward with 16 bit weight, 16 bit activation, we get a 16 bit activation here in the end when we are doing back propagation of the computation is also done with floating point 16 bit. <span onclick="goVideo(this)" class="timestamp">48:25</span></p>
+<p>Very interesting here, for the weights we get a floating point 16 bit gradient here for the weight. <span onclick="goVideo(this)" class="timestamp">48:52</span></p>
+<p>But when we are doing the update, so W plus learning rate times the gradient, that operation has to be done in 32 bit. <span onclick="goVideo(this)" class="timestamp">49:03</span></p>
+<p>That's where the mixed precision is coming from. <span onclick="goVideo(this)" class="timestamp">49:17</span></p>
+<p>And see there are two colors, which here is 16 bit, here is the 32 bit. <span onclick="goVideo(this)" class="timestamp">49:20</span></p>
+<p>That's where the mixed precision comes from. <span onclick="goVideo(this)" class="timestamp">49:26</span></p>
+<p>So does such low precision sacrifice your prediction accuracy for your model? <span onclick="goVideo(this)" class="timestamp">49:31</span></p>
+<p>So this is the figure from NVIDIA just released a couple of weeks ago actually. <span onclick="goVideo(this)" class="timestamp">49:38</span></p>
+<p>Thanks to Paulius giving me the slide. <span onclick="goVideo(this)" class="timestamp">49:46</span></p>
+<p>The convergence between floating point 32 versus the multi tensor up, which is basically the mixed precision training, are actually pretty much the same for convergence. <span onclick="goVideo(this)" class="timestamp">49:51</span></p>
+<p>If you zoom it in a little bit, they are pretty much the same. <span onclick="goVideo(this)" class="timestamp">50:02</span></p>
+<p>And for ResNet, the mixed precision sometimes behaves a little better than the full precision weight. <span onclick="goVideo(this)" class="timestamp">50:06</span></p>
+<p>Maybe because of noise. <span onclick="goVideo(this)" class="timestamp">50:14</span></p>
+<p>But in the end, after you train the model, this is the result of AlexNet, Inception V3, and ResNet-50 with FP32 versus FP16 mixed precision training. <span onclick="goVideo(this)" class="timestamp">50:17</span></p>
+<p>The accuracy is pretty much the same for these two methods. <span onclick="goVideo(this)" class="timestamp">50:29</span></p>
+<p>A little bit worse, but not by too much. <span onclick="goVideo(this)" class="timestamp">50:33</span></p>
+<p>So having talked about the mixed precision training, the next idea is to train with model distillation. <span onclick="goVideo(this)" class="timestamp">50:40</span></p>
+<p>For example, you can have multiple neural networks, Googlenet, Vggnet, Resnet for example. <span onclick="goVideo(this)" class="timestamp">50:49</span></p>
+<p>And the question is, can we take advantage of these different models? <span onclick="goVideo(this)" class="timestamp">50:55</span></p>
+<p>Of course we can do model ensemble, can we utilitze them as teacher, to teach a small junior neural network to have it perform as good as the senior neural network. <span onclick="goVideo(this)" class="timestamp">51:02</span></p>
+<p>So this is the idea. <span onclick="goVideo(this)" class="timestamp">51:15</span></p>
+<p>You have multiple large powerful senior neural networks to teach this student model. <span onclick="goVideo(this)" class="timestamp">51:17</span></p>
+<p>And hopefully it can get better results. <span onclick="goVideo(this)" class="timestamp">51:25</span></p>
+<p>And the idea to do that is, instead of using this hard label, for example for car, dog, cat, the probability for dog is 100%, but the output of the geometric ensemble of those large teacher neural networks maybe the dog has 90% and the cat is about 10%, and the magic happens here. <span onclick="goVideo(this)" class="timestamp">51:28</span></p>
+<p>You want to have a softened result label here. <span onclick="goVideo(this)" class="timestamp">51:55</span></p>
+<p>For example, the dog is 30%, the cat is 20%. <span onclick="goVideo(this)" class="timestamp">51:59</span></p>
+<p>Still the dog is higher than the cat. <span onclick="goVideo(this)" class="timestamp">52:03</span></p>
+<p>So the prediction is still correct, but it uses this soft label to train the student neural network rather than use this hard label to train the student neural network. <span onclick="goVideo(this)" class="timestamp">52:05</span></p>
+<p>And mathematically, you control how much do you make it soft by this temperature during the soft max controlling by this temperature. <span onclick="goVideo(this)" class="timestamp">52:21</span></p>
+<p>And the result is that, starting with the trained model that classifies 58.9% of the test frames correctly, the new model converges to 57%. <span onclick="goVideo(this)" class="timestamp">52:34</span></p>
+<p>Only train on 3% of the data. <span onclick="goVideo(this)" class="timestamp">52:47</span></p>
+<p>So that's the magic for model distillation using this soft label. <span onclick="goVideo(this)" class="timestamp">52:52</span></p>
+<p>And the last idea is my recent paper using a better regularization to train deep neural nets. <span onclick="goVideo(this)" class="timestamp">52:59</span></p>
+<p>We have seen these two figures before. <span onclick="goVideo(this)" class="timestamp">53:06</span></p>
+<p>We pruned the neural network, having less number of weights, but have the same accuracy. <span onclick="goVideo(this)" class="timestamp">53:07</span></p>
+<p>Now what I did is to recover and to retrain those weights shown in red and make everything train out together to increase the model capacity after it is trained at a low dimensional space. <span onclick="goVideo(this)" class="timestamp">53:12</span></p>
+<p>It's like you learn the trunk first and then gradually add those leaves and learn everything together. <span onclick="goVideo(this)" class="timestamp">53:24</span></p>
+<p>It turns out, on ImageNet it performs relatively about 1% to 4% absolute improvement of accuracy. <span onclick="goVideo(this)" class="timestamp">53:31</span></p>
+<p>And is also general purpose, works on long-short term memory and also recurrent neural nets collaborated with Baidu. <span onclick="goVideo(this)" class="timestamp">53:41</span></p>
+<p>So I also open sourced this special training model on the DSD Model Zoo, where there are trained, all these models, GoogleNet, VGG, ResNet, and also SqueezeNet, and also AlexNet. <span onclick="goVideo(this)" class="timestamp">53:49</span></p>
+<p>So if you are interested, feel free to check out this Model Zoo and compare it with the Caffe Model Zoo. <span onclick="goVideo(this)" class="timestamp">54:01</span></p>
+<p>Here's some examples on dense-spare-dense training helps with image capture. <span onclick="goVideo(this)" class="timestamp">54:11</span></p>
+<p>For example, this is a very challenging figure. <span onclick="goVideo(this)" class="timestamp">54:17</span></p>
+<p>The original baseline of neural talk says a boy in a red shirt is climbing a rock wall. <span onclick="goVideo(this)" class="timestamp">54:21</span></p>
+<p>And the sparse model says a young girl is jumping off a tree, probably mistaking the hair with either the rock or the tree. <span onclick="goVideo(this)" class="timestamp">54:27</span></p>
+<p>But then sparse-dense training by using this kind of regularization on a low dimensional space, it says a young girl in a pink shirt is swinging on a swing. <span onclick="goVideo(this)" class="timestamp">54:33</span></p>
+<p>And there are a lot of examples due to the limit of time, I will not go over them one by one. <span onclick="goVideo(this)" class="timestamp">54:42</span></p>
+<p>For example, a group of people are standing in front of a building, there's no building. <span onclick="goVideo(this)" class="timestamp">54:49</span></p>
+<p>A group of people are walking in the park. <span onclick="goVideo(this)" class="timestamp">54:53</span></p>
+<p>Feel free to check out the paper and see more interesting results. <span onclick="goVideo(this)" class="timestamp">54:55</span></p>
+<p>Okay finally, we come to hardware for efficient training. <span onclick="goVideo(this)" class="timestamp">55:01</span></p>
+<p>How to we take advantage of the algorithms we just mentioned. <span onclick="goVideo(this)" class="timestamp">55:06</span></p>
+<p>For example, parallelism, mixed precision, how are the hardware designed to actually take advantage of such features. <span onclick="goVideo(this)" class="timestamp">55:10</span></p>
+<p>First GPUs, this is the Nvidia PASCAL GPU, GP100, which was released last year. <span onclick="goVideo(this)" class="timestamp">55:21</span></p>
+<p>So it supports up to 20 Teraflops on FP16. <span onclick="goVideo(this)" class="timestamp">55:32</span></p>
+<p>It has 16 gigabytes of high bandwidth memory. <span onclick="goVideo(this)" class="timestamp">55:38</span></p>
+<p>750 gigabytes per second. <span onclick="goVideo(this)" class="timestamp">55:40</span></p>
+<p>So remember, computation and memory bandwidth are the two factors determines your overall performance. <span onclick="goVideo(this)" class="timestamp">55:46</span></p>
+<p>Whichever is lower, it will suffer. <span onclick="goVideo(this)" class="timestamp">55:53</span></p>
+<p>So this is a really high bandwidth, 700 gigabytes compared with DDR3 is just 10 or 30 gigabytes per second. <span onclick="goVideo(this)" class="timestamp">55:57</span></p>
+<p>Consumes 300 Watts and it's done in 16 nanometer process and have a 160 gigabytes per second NV Link. <span onclick="goVideo(this)" class="timestamp">56:08</span></p>
+<p>So remember we have computation, we have memory, and the third thing is the communication. <span onclick="goVideo(this)" class="timestamp">56:22</span></p>
+<p>All three factors has to be balanced in order to achieve a good performance. <span onclick="goVideo(this)" class="timestamp">56:28</span></p>
+<p>So this is very powerful, but even more exciting, just about a month ago, Jensen released the newest architecture called the Volta GPUs. <span onclick="goVideo(this)" class="timestamp">56:35</span></p>
+<p>And let's see what is inside the Volta GPU. <span onclick="goVideo(this)" class="timestamp">56:48</span></p>
+<p>Just released less than a month ago, so it has 15 of FP32 teraflops and what is new here, there is 120 Tensor T-OPS, so specifically designed for deep learning. <span onclick="goVideo(this)" class="timestamp">56:50</span></p>
+<p>And we'll later cover what is the tensor core. <span onclick="goVideo(this)" class="timestamp">57:08</span></p>
+<p>And what is this 120 coming from. <span onclick="goVideo(this)" class="timestamp">57:11</span></p>
+<p>And rather than 750 gigabytes per second, this year, the HBM2, they are using 900 gigabytes per second memory bandwidth. <span onclick="goVideo(this)" class="timestamp">57:16</span></p>
+<p>Very exciting. <span onclick="goVideo(this)" class="timestamp">57:25</span></p>
+<p>And 12 nanometer process has a die size of more than 800 millimeters square. <span onclick="goVideo(this)" class="timestamp">57:27</span></p>
+<p>A really large chip and supported by 300 gigabytes per second NVLink. <span onclick="goVideo(this)" class="timestamp">57:33</span></p>
+<p>So what's new in Volta, the most interesting thing for us for deep learning, is this thing called Tensor Core. <span onclick="goVideo(this)" class="timestamp">57:40</span></p>
+<p>So what is a Tensor Core? <span onclick="goVideo(this)" class="timestamp">57:49</span></p>
+<p>Tensor Core is actually an instruction that can do the four by four matrix times a four by four matrix. <span onclick="goVideo(this)" class="timestamp">57:51</span></p>
+<p>The fused FMA stands Fused Multiplication and Add in this mixed precision operation. <span onclick="goVideo(this)" class="timestamp">58:00</span></p>
+<p>Just in one single clock cycle. <span onclick="goVideo(this)" class="timestamp">58:08</span></p>
+<p>So let's discern for a little bit what does this mean. <span onclick="goVideo(this)" class="timestamp">58:12</span></p>
+<p>So mixed precision is exactly as we mentioned in the last chapter, so we are having FP16 for the multiplication, but for accumulation, we are doing it with FP32. <span onclick="goVideo(this)" class="timestamp">58:15</span></p>
+<p>That's where the mixed precision comes from. <span onclick="goVideo(this)" class="timestamp">58:31</span></p>
+<p>So let's say how many operations, if it's four by four by four, it's 64 multiplications then just in one single cycle. <span onclick="goVideo(this)" class="timestamp">58:35</span></p>
+<p>That's 12x increase in the speedup of the Volta compared with the Pascal, which is released just less year. <span onclick="goVideo(this)" class="timestamp">58:45</span></p>
+<p>So this is the result for matrix multiplication on different sizes. <span onclick="goVideo(this)" class="timestamp">58:55</span></p>
+<p>The speedup of Volta over Pascal is roughly 3x faster doing these matrix multiplications. <span onclick="goVideo(this)" class="timestamp">59:01</span></p>
+<p>What we care more is not only matrix multiplication but actually running the deep neural nets. <span onclick="goVideo(this)" class="timestamp">59:13</span></p>
+<p>So both for training and for inference. <span onclick="goVideo(this)" class="timestamp">59:19</span></p>
+<p>And for training on ResNet-50, by taking advantage of this Tensor Core in this V100, it is 2.4x faster than the P100 using FP32. <span onclick="goVideo(this)" class="timestamp">59:23</span></p>
+<p>So on the right hand side, it compares the inference speedup, given a 7 microsecond latency requirement. <span onclick="goVideo(this)" class="timestamp">59:38</span></p>
+<p>What is the number of images per second it can process? <span onclick="goVideo(this)" class="timestamp">59:50</span></p>
+<p>It has a measurement of throughput. <span onclick="goVideo(this)" class="timestamp">59:53</span></p>
+<p>Again, the V100 over P100, by taking advantage of the Tensor Core, is 3.7 faster than the P100. <span onclick="goVideo(this)" class="timestamp">59:56</span></p>
+<p>So this figure gives roughly an idea, what is a Tensor Core, what is an integer unit, what is a floating point unit. <span onclick="goVideo(this)" class="timestamp">60:13</span></p>
+<p>So this whole figure is a single SM stream multiprocessor. <span onclick="goVideo(this)" class="timestamp">60:22</span></p>
+<p>So SM is partitioned into four processing blocks. <span onclick="goVideo(this)" class="timestamp">60:35</span></p>
+<p>One, two, three, four, right? <span onclick="goVideo(this)" class="timestamp">60:39</span></p>
+<p>And in each block there are eight FP64 cores here and 16 FP32 and 16 INT32 cores here, units here. <span onclick="goVideo(this)" class="timestamp">60:41</span></p>
+<p>And then there are two of the new mixed precision Tensor cores specifically designed for deep learning. <span onclick="goVideo(this)" class="timestamp">60:55</span></p>
+<p>And also there are the one warp scheduler, dispatch unit and Register File, as before. <span onclick="goVideo(this)" class="timestamp">61:07</span></p>
+<p>So what is new here is the Tensor core unit here. <span onclick="goVideo(this)" class="timestamp">61:13</span></p>
+<p>So here is a figure comparing the recent generations of Nvidia GPUs from Kepler to Maxwell to Pascal to Volta. <span onclick="goVideo(this)" class="timestamp">61:18</span></p>
+<p>We can see everything is keeping improving. <span onclick="goVideo(this)" class="timestamp">61:34</span></p>
+<p>For example, the boost clock has been increased from about 800 MHz to 1.4 GHz. <span onclick="goVideo(this)" class="timestamp">61:37</span></p>
+<p>And from the Volta generation there begins to have the Tensor core units here, which has never existed before. <span onclick="goVideo(this)" class="timestamp">61:46</span></p>
+<p>And before the Maxwell, the GPUs are using the GDDR5, and after the Pascal GPU, the HBM begins to came into place, the high-bandwidth memory. <span onclick="goVideo(this)" class="timestamp">61:59</span></p>
+<p>750 gigabytes per second here. <span onclick="goVideo(this)" class="timestamp">62:14</span></p>
+<p>900 gigabytes per second compared with DDR3, 30 gigabytes per second. <span onclick="goVideo(this)" class="timestamp">62:18</span></p>
+<p>And memory size actually didn't increase by too much, and the power consumption is actually also remaining roughly the same. <span onclick="goVideo(this)" class="timestamp">62:27</span></p>
+<p>But giving the increase of computation, you can fit them in the fixed power envelope that's still an exciting thing. <span onclick="goVideo(this)" class="timestamp">62:38</span></p>
+<p>And the manufacturing process is actually improving from 28 nanometer, 16 nanometer, all the way to 12 nanometer. <span onclick="goVideo(this)" class="timestamp">62:46</span></p>
+<p>And the chip area are also increasing to 800 millimeter-squared, that's really huge. <span onclick="goVideo(this)" class="timestamp">62:55</span></p>
+<p>So, you may be interested in the comparison of the GPU with the TPU, right? <span onclick="goVideo(this)" class="timestamp">63:03</span></p>
+<p>So how do they compare with each other? <span onclick="goVideo(this)" class="timestamp">63:09</span></p>
+<p>So in the original TPU paper, TPU actually designed roughly in the year of 2015, and this is comparison of the Pascal P40 GPU released in 2016. <span onclick="goVideo(this)" class="timestamp">63:12</span></p>
+<p>So, TPU, the power consumption is lower, is larger on chip memory of 24 megabytes, really large on-chip SRAM managed by the software. <span onclick="goVideo(this)" class="timestamp">63:27</span></p>
+<p>And then both of them support INT8 operations, while the inferences per second given a 10 nanometer latency the comparison for TPU is 1X. <span onclick="goVideo(this)" class="timestamp">63:38</span></p>
+<p>For the P40 it's about 2X. <span onclick="goVideo(this)" class="timestamp">63:50</span></p>
+<p>So, just last week, in the Google I/O, a new nuclear bomb is landed on the Earth. <span onclick="goVideo(this)" class="timestamp">63:57</span></p>
+<p>That is the Google Cloud TPU. <span onclick="goVideo(this)" class="timestamp">64:06</span></p>
+<p>So now TPU not only support inference, but also support training. <span onclick="goVideo(this)" class="timestamp">64:09</span></p>
+<p>So there is a very limited information we can get beyond this Google Blog. <span onclick="goVideo(this)" class="timestamp">64:15</span></p>
+<p>So their Cloud TPU delivers up to 180 teraflops to train and run machine learning models. <span onclick="goVideo(this)" class="timestamp">64:20</span></p>
+<p>And this is multiple Cloud TPU, making it into a TPU pod, which is built with 16 the second generation TPUs and delivers up to 11.5 teraflops of machine learning acceleration. <span onclick="goVideo(this)" class="timestamp">64:33</span></p>
+<p>So in the Google Blog, they mentioned that one of the large scale translation models, Google translation models, used to take a full day to train on 32 of best commercially-available GPUs, probably P40 or P100, maybe. <span onclick="goVideo(this)" class="timestamp">64:50</span></p>
+<p>And now it trains to the same accuracy, just within one afternoon, with just 1/8 of a TPU pod, which is pretty exciting. <span onclick="goVideo(this)" class="timestamp">65:08</span></p>
+<p>Okay, so as a little wrap-up. <span onclick="goVideo(this)" class="timestamp">65:22</span></p>
+<p>We covered a lot of stuff, we've mentioned the four dimension space of algorithm and hardware, inference and training, we covered the algorithms for inference, for example, pruning and quantization, Winograd Convolution, binary, ternary, weight sharing, for example. <span onclick="goVideo(this)" class="timestamp">65:25</span></p>
+<p>And then the hardware for the efficient inference. <span onclick="goVideo(this)" class="timestamp">65:42</span></p>
+<p>For example, the TPU, that take advantage of INT8, integer 8. <span onclick="goVideo(this)" class="timestamp">65:44</span></p>
+<p>And also my design of EIE accelerator that take advantage of the sparsity, anything multiplied by zero is zero, so don't store it, don't compute on it. <span onclick="goVideo(this)" class="timestamp">65:52</span></p>
+<p>And also the efficient algorithm for training, for example, how do we do parallelization and the most recent research on how do we use mixed precision training by taking advantage of FP16 rather than FP32 to do training which is four times saving the energy and four times saving in the area, which doesn't quite sacrifice the accuracy you'll get from the training. <span onclick="goVideo(this)" class="timestamp">66:04</span></p>
+<p>And also Dense-Sparse-Dense training using better regularization sparse regularization, and also the teacher-student model. <span onclick="goVideo(this)" class="timestamp">66:31</span></p>
+<p>You have multiple teacher on your network and have a small student network that you can distill the knowledge from the teacher in your network by a temperature. <span onclick="goVideo(this)" class="timestamp">66:41</span></p>
+<p>And finally we covered the hardware for efficient training and introduced two nuclear bombs. <span onclick="goVideo(this)" class="timestamp">66:51</span></p>
+<p>One is the Volta GPU, the other is the TPU version two, the Cloud TPU and also the amazing Tensor cores in the newest generation of Nvidia GPUs. <span onclick="goVideo(this)" class="timestamp">66:57</span></p>
+<p>And we also revealed the progression of a wide range, the recent Nvidia GPUs from the Kepler K40, that's actually when I started my research, what we used in the beginning, all the way to and then K40, M40, and then Pascal and then finally the exciting Volta GPU. <span onclick="goVideo(this)" class="timestamp">67:12</span></p>
+<p>So every year there is a nuclear bomb in the spring. <span onclick="goVideo(this)" class="timestamp">67:33</span></p>
+<p>Okay, a little look ahead in the future. <span onclick="goVideo(this)" class="timestamp">67:40</span></p>
+<p>So in the future of the city we can imagine there are a lot of AI applications using smart society, smart care, IOT devices, smart retail, for example, the Amazon Go, and also smart home, a lot of scenarios. <span onclick="goVideo(this)" class="timestamp">67:44</span></p>
+<p>And it poses a lot of challenges on the hardware design that requires the low latency, privacy, mobility and energy efficiency. <span onclick="goVideo(this)" class="timestamp">67:59</span></p>
+<p>You don't want your battery to drain very quickly. <span onclick="goVideo(this)" class="timestamp">68:09</span></p>
+<p>So it's both challenging and very exciting era for the code design for both the machine learning deep neural network model architectures and also the hardware architecture. <span onclick="goVideo(this)" class="timestamp">68:12</span></p>
+<p>So we have moved from PC era to mobile era. <span onclick="goVideo(this)" class="timestamp">68:23</span></p>
+<p>Now we are in the AI-First era, and hope you are as excited as I am for this kind of brain-inspired cognitive computing research. <span onclick="goVideo(this)" class="timestamp">68:26</span></p>
+<p>Thank you for your attention, I'm glad to take questions. <span onclick="goVideo(this)" class="timestamp">68:37</span></p>
+<p>[applause] We have five minutes. <span onclick="goVideo(this)" class="timestamp">68:41</span></p>
+<p>Of course. <span onclick="goVideo(this)" class="timestamp">68:54</span></p>
+<p>- [Student] Can you commercialize the deep architecture? <span onclick="goVideo(this)" class="timestamp">68:55</span></p>
+<p>- The architecture, yeah, some of the ideas are pretty good. <span onclick="goVideo(this)" class="timestamp">68:59</span></p>
+<p>I think there's opportunity. <span onclick="goVideo(this)" class="timestamp">69:04</span></p>
+<p>Yeah. <span onclick="goVideo(this)" class="timestamp">69:06</span></p>
+<p>Yeah. <span onclick="goVideo(this)" class="timestamp">69:11</span></p>
+<p>The question is, what can we do to make the hardware better? <span onclick="goVideo(this)" class="timestamp">69:30</span></p>
+<p>Oh, right, the question is how do we, the challenges and what opportunity for those small embedded devices around deep neural network or in general AI algorithms. <span onclick="goVideo(this)" class="timestamp">69:46</span></p>
+<p>Yeah, so those are the algorithm I discussed in the beginning about inference. <span onclick="goVideo(this)" class="timestamp">69:57</span></p>
+<p>Here. <span onclick="goVideo(this)" class="timestamp">70:06</span></p>
+<p>These are the techniques that can enable such inference or AI running on embedded devices, by having less number of weights, fewer bits per weight, and also quantization, low rank approximation. <span onclick="goVideo(this)" class="timestamp">70:08</span></p>
+<p>The small matrix, same accuracy, even going to binary, or ternary weights having just two bits to do the computation rather than 16 or even 32 bit and also the Winograd Transformation. <span onclick="goVideo(this)" class="timestamp">70:20</span></p>
+<p>Those are also the enabling algorithms for those low-power embedded devices. <span onclick="goVideo(this)" class="timestamp">70:33</span></p>
+<p>Okay, the question is, if it's binary weight, the software developers may be not able to take advantage of it. <span onclick="goVideo(this)" class="timestamp">70:57</span></p>
+<p>There is a way to take advantage of binary weight. <span onclick="goVideo(this)" class="timestamp">71:07</span></p>
+<p>So in one register there are 32 bit. <span onclick="goVideo(this)" class="timestamp">71:11</span></p>
+<p>Now you can think of it as a 32-way parallelism. <span onclick="goVideo(this)" class="timestamp">71:16</span></p>
+<p>Each bit is a single operation. <span onclick="goVideo(this)" class="timestamp">71:19</span></p>
+<p>So say previously we have 10 ops per second. <span onclick="goVideo(this)" class="timestamp">71:22</span></p>
+<p>Now you get 330 ops per second. <span onclick="goVideo(this)" class="timestamp">71:25</span></p>
+<p>You can do this bitwise operations. <span onclick="goVideo(this)" class="timestamp">71:31</span></p>
+<p>For example, XOR operations. <span onclick="goVideo(this)" class="timestamp">71:34</span></p>
+<p>So one register file, one operation becomes 32 operation. <span onclick="goVideo(this)" class="timestamp">71:37</span></p>
+<p>So there is a paper called XORmad, they very amazing implemented on the Raspberry Pi using this feature to do real-time detection, very cool stuff. <span onclick="goVideo(this)" class="timestamp">71:43</span></p>
+<p>Yeah. <span onclick="goVideo(this)" class="timestamp">71:55</span></p>
+<p>Yeah, so the trade-off is always so the power area and performance in general, all the hardware design have to take into account the performance, the power, and also the area. <span onclick="goVideo(this)" class="timestamp">72:11</span></p>
+<p>When machine learning comes, there's a fourth figure of merit which is the accuracy. <span onclick="goVideo(this)" class="timestamp">72:26</span></p>
+<p>What is the accuracy? <span onclick="goVideo(this)" class="timestamp">72:32</span></p>
+<p>And there is a fifth one which is programmability. <span onclick="goVideo(this)" class="timestamp">72:34</span></p>
+<p>So how general is your hardware? <span onclick="goVideo(this)" class="timestamp">72:37</span></p>
+<p>For example, if Google just want to use that for AI and deep learning, it's totally fine that we can have a fully very specialized architecture just for deep learning to support convolution, multi-layered perception, long-short-term memory, but GPUS, you also want to have support for those scientific computing or graphics, AR and VR. <span onclick="goVideo(this)" class="timestamp">72:39</span></p>
+<p>So that's a difference, first of all. <span onclick="goVideo(this)" class="timestamp">73:04</span></p>
+<p>And TPU basically is a ASIC, right? <span onclick="goVideo(this)" class="timestamp">73:10</span></p>
+<p>It's a very fixed function but you can still program it with those coarse instructions so people from Google roughly designed those coarse granularity instruction. <span onclick="goVideo(this)" class="timestamp">73:14</span></p>
+<p>For example, one instruction just load the matrix, store a matrix, do convolutions, do matrix multiplications. <span onclick="goVideo(this)" class="timestamp">73:24</span></p>
+<p>Those coarse-grain instructions and they have a software-managed memory, also called a scratchpad. <span onclick="goVideo(this)" class="timestamp">73:31</span></p>
+<p>It's different from cache where it determines where to evict something from the cache, but now, since you know the computation pattern, there's no need to do out-of-order execution, to do branch prediction, no such things. <span onclick="goVideo(this)" class="timestamp">73:40</span></p>
+<p>Everything is determined, so you can take the multi of it and maintain a fully software-managed scratchpad to reduce the data movement and remember, data movement is the key for reducing the memory footprint and energy consumption. <span onclick="goVideo(this)" class="timestamp">73:57</span></p>
+<p>So, yeah. <span onclick="goVideo(this)" class="timestamp">74:14</span></p>
+<p>Mobilia and Nobana architectures actually I'm not quite familiar, didn't prepare those slides, so, comment it a little bit later, no. <span onclick="goVideo(this)" class="timestamp">74:26</span></p>
+<p>Oh, yeah, of course. <span onclick="goVideo(this)" class="timestamp">74:52</span></p>
+<p>Those are always and can certainly be applied to low-power embedded devices. <span onclick="goVideo(this)" class="timestamp">74:54</span></p>
+<p>If you're interested, I can show you a... <span onclick="goVideo(this)" class="timestamp">75:00</span></p>
+<p>Whoops. <span onclick="goVideo(this)" class="timestamp">75:04</span></p>
+<p>Some examples of, oops. <span onclick="goVideo(this)" class="timestamp">75:06</span></p>
+<p>Where is that? <span onclick="goVideo(this)" class="timestamp">75:10</span></p>
+<p>Of my previous projects running deep neural nets. <span onclick="goVideo(this)" class="timestamp">75:11</span></p>
+<p>For example, on a drone, this is using a Nvidia TK1 mobile GPU to do real-time tracking and detection. <span onclick="goVideo(this)" class="timestamp">75:15</span></p>
+<p>This is me playing my nunchaku. <span onclick="goVideo(this)" class="timestamp">75:26</span></p>
+<p>Filmed by a drone to do the detection and tracking. <span onclick="goVideo(this)" class="timestamp">75:28</span></p>
+<p>And also, this FPGA doing the deep neural network. <span onclick="goVideo(this)" class="timestamp">75:34</span></p>
+<p>It's pretty small. <span onclick="goVideo(this)" class="timestamp">75:38</span></p>
+<p>This large, doing the face-alignment and detecting the eyes, the nose and the mouth, at a pretty high framerate. <span onclick="goVideo(this)" class="timestamp">75:41</span></p>
+<p>Consuming only three watts. <span onclick="goVideo(this)" class="timestamp">75:53</span></p>
+<p>This is a project I did at Facebook doing the deep neural nets on the mobile phone to do image classification, for example, it says it's a laptop, or you can feed it with an image and it says it's a selfie, has person and the face, et cetera. <span onclick="goVideo(this)" class="timestamp">75:56</span></p>
+<p>So there's lots of opportunity for those embedded or mobile-deployment of deep neural nets. <span onclick="goVideo(this)" class="timestamp">76:14</span></p>
+<p>No, there is a team doing that, but I cannot comment too much, probably. <span onclick="goVideo(this)" class="timestamp">76:30</span></p>
+<p>There is a team at Google doing that sort of stuff, yeah. <span onclick="goVideo(this)" class="timestamp">76:34</span></p>
+<p>Okay, thanks, everyone. <span onclick="goVideo(this)" class="timestamp">76:44</span></p>
+<p>If you have any questions, feel free to drop me a e-mail. <span onclick="goVideo(this)" class="timestamp">76:46</span></p>
+		</div>
+	</body>
+</html>

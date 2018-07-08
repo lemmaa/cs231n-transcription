@@ -1,0 +1,811 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="css/style.css">
+		<script>
+			var url="https://www.youtube.com/watch?v=6wcs6szJWMY&list=PL3FW7Lu3i5JvHM8ljYj-zLfQRF3EO8sYv&index=12"
+		</script>
+		<script src="js/script.js"></script>
+	</head>
+	<body>
+		<div>
+<h1>Lecture 12 - Visualizing and Understanding</h1>
+<br/>
+<p>Good morning. <span onclick="goVideo(this)" class="timestamp">00:10</span></p>
+<p>So, it's so, I want to get started. <span onclick="goVideo(this)" class="timestamp">00:12</span></p>
+<p>Welcome to Lecture 12, of CS-231N. <span onclick="goVideo(this)" class="timestamp">00:15</span></p>
+<p>Today we are going to talk about Visualizing and Understanding convolutional networks. <span onclick="goVideo(this)" class="timestamp">00:18</span></p>
+<p>This is always a super fun lecture to give because we get to look a lot of pretty pictures. <span onclick="goVideo(this)" class="timestamp">00:21</span></p>
+<p>So, it's, it's one of my favorites. <span onclick="goVideo(this)" class="timestamp">00:25</span></p>
+<p>As usual a couple administrative things. <span onclick="goVideo(this)" class="timestamp">00:28</span></p>
+<p>So, hopefully your projects are all going well, because as a reminder your milestones are due on Canvas tonight. <span onclick="goVideo(this)" class="timestamp">00:30</span></p>
+<p>It is Canvas, right? <span onclick="goVideo(this)" class="timestamp">00:36</span></p>
+<p>Okay, so want to double check, yeah. <span onclick="goVideo(this)" class="timestamp">00:38</span></p>
+<p>Due on Canvas tonight, we are working on furiously grading your midterms. <span onclick="goVideo(this)" class="timestamp">00:39</span></p>
+<p>So, we'll hope to have those midterms grades to you back by on grade scope this week. <span onclick="goVideo(this)" class="timestamp">00:43</span></p>
+<p>So, I know that was little confusion, you all got registration email's for grade scope probably in the last week. <span onclick="goVideo(this)" class="timestamp">00:49</span></p>
+<p>Something like that, we start couple of questions on piazo. <span onclick="goVideo(this)" class="timestamp">00:54</span></p>
+<p>So, we've decided to use grade scope to grade the midterms. <span onclick="goVideo(this)" class="timestamp">00:57</span></p>
+<p>So, don't be confused, if you get some emails about that. <span onclick="goVideo(this)" class="timestamp">00:59</span></p>
+<p>Another reminder is that assignment three was released last week on Friday. <span onclick="goVideo(this)" class="timestamp">01:02</span></p>
+<p>It will be due, a week from this Friday, on the 26th. <span onclick="goVideo(this)" class="timestamp">01:07</span></p>
+<p>This is, an assignment three, is almost entirely brand new this year. <span onclick="goVideo(this)" class="timestamp">01:11</span></p>
+<p>So, it we apologize for taking a little bit longer than expected to get it out. <span onclick="goVideo(this)" class="timestamp">01:14</span></p>
+<p>But I think it's super cool. <span onclick="goVideo(this)" class="timestamp">01:18</span></p>
+<p>A lot of that stuff, we'll talk about in today's lecture. <span onclick="goVideo(this)" class="timestamp">01:20</span></p>
+<p>You'll actually be implementing on your assignment. <span onclick="goVideo(this)" class="timestamp">01:22</span></p>
+<p>And for the assignment, you'll get the choice of either Pi torch or tensure flow. <span onclick="goVideo(this)" class="timestamp">01:25</span></p>
+<p>To work through these different examples. <span onclick="goVideo(this)" class="timestamp">01:29</span></p>
+<p>So, we hope that's really useful experience for you guys. <span onclick="goVideo(this)" class="timestamp">01:30</span></p>
+<p>We also saw a lot of activity on HyperQuest over the weekend. <span onclick="goVideo(this)" class="timestamp">01:34</span></p>
+<p>So that's, that's really awesome. <span onclick="goVideo(this)" class="timestamp">01:37</span></p>
+<p>The leader board went up yesterday. <span onclick="goVideo(this)" class="timestamp">01:39</span></p>
+<p>It seems like you guys are really trying to battle it out to show off your deep learning neural network training skills. <span onclick="goVideo(this)" class="timestamp">01:40</span></p>
+<p>So that's super cool. <span onclick="goVideo(this)" class="timestamp">01:46</span></p>
+<p>And we because due to the high interest in HyperQuest and due to the conflicts with the, with the Milestones submission time. <span onclick="goVideo(this)" class="timestamp">01:47</span></p>
+<p>We decided to extend the deadline for extra credit through Sunday. <span onclick="goVideo(this)" class="timestamp">01:55</span></p>
+<p>So, anyone who does at least 12 runs on HyperQuest by Sunday will get little bit of extra credit in the class. <span onclick="goVideo(this)" class="timestamp">01:58</span></p>
+<p>Also those of you who are, at the top of leader board doing really well, will get may be little bit extra, extra credit. <span onclick="goVideo(this)" class="timestamp">02:04</span></p>
+<p>So, I thanks for participating we got lot of interest and that was really cool. <span onclick="goVideo(this)" class="timestamp">02:11</span></p>
+<p>Final reminder is about the poster session. <span onclick="goVideo(this)" class="timestamp">02:15</span></p>
+<p>So, we have the poster session will be on June 6th. <span onclick="goVideo(this)" class="timestamp">02:17</span></p>
+<p>That date is finalized, I think that, I don't remember the exact time. <span onclick="goVideo(this)" class="timestamp">02:21</span></p>
+<p>But it is June 6th. <span onclick="goVideo(this)" class="timestamp">02:24</span></p>
+<p>So that, we have some questions about when exactly that poster session is for those of you who are traveling at the end of quarter or starting internships or something like that. <span onclick="goVideo(this)" class="timestamp">02:25</span></p>
+<p>So, it will be June 6th. <span onclick="goVideo(this)" class="timestamp">02:33</span></p>
+<p>Any questions on the admin notes. <span onclick="goVideo(this)" class="timestamp">02:35</span></p>
+<p>No, totally clear. <span onclick="goVideo(this)" class="timestamp">02:39</span></p>
+<p>So, last time we talked. <span onclick="goVideo(this)" class="timestamp">02:41</span></p>
+<p>So, last time we had a pretty jam packed lecture, when we talked about lot of different computer vision tasks, as a reminder. <span onclick="goVideo(this)" class="timestamp">02:42</span></p>
+<p>We talked about semantic segmentation which is this problem, where you want to sign labels to every pixel in the input image. <span onclick="goVideo(this)" class="timestamp">02:48</span></p>
+<p>But does not differentiate the object instances in those images. <span onclick="goVideo(this)" class="timestamp">02:54</span></p>
+<p>We talked about classification plus localization. <span onclick="goVideo(this)" class="timestamp">02:58</span></p>
+<p>Where in addition to a class label you also want to draw a box or perhaps several boxes in the image. <span onclick="goVideo(this)" class="timestamp">03:00</span></p>
+<p>Where the distinction here is that, in a classification plus localization setup. <span onclick="goVideo(this)" class="timestamp">03:06</span></p>
+<p>You have some fix number of objects that you are looking for So, we also saw that this type of paradigm can be applied to the things like pose recognition. <span onclick="goVideo(this)" class="timestamp">03:10</span></p>
+<p>Where you want to regress to different numbers of joints in the human body. <span onclick="goVideo(this)" class="timestamp">03:16</span></p>
+<p>We also talked about the object detection where you start with some fixed set of category labels that you are interested in. <span onclick="goVideo(this)" class="timestamp">03:20</span></p>
+<p>Like dogs and cats. <span onclick="goVideo(this)" class="timestamp">03:25</span></p>
+<p>And then the task is to draw a boxes around every instance of those objects that appear in the input image. <span onclick="goVideo(this)" class="timestamp">03:27</span></p>
+<p>And object detection is really distinct from classification plus localization because with object detection, we don't know ahead of time, how many object instances we're looking for in the image. <span onclick="goVideo(this)" class="timestamp">03:32</span></p>
+<p>And we saw that there's this whole family of methods based on RCNN, Fast RCNN and faster RCNN, as well as the single shot detection methods for addressing this problem of object detection. <span onclick="goVideo(this)" class="timestamp">03:42</span></p>
+<p>Then finally we talked pretty briefly about instance segmentation, which is kind of combining aspects of a semantic segmentation and object detection where the goal is to detect all the instances of the categories we care about, as well as label the pixels belonging to each instance. <span onclick="goVideo(this)" class="timestamp">03:52</span></p>
+<p>So, in this case, we detected two dogs and one cat and for each of those instances we wanted to label all the pixels. <span onclick="goVideo(this)" class="timestamp">04:07</span></p>
+<p>So, these are we kind of covered a lot last lecture but those are really interesting and exciting problems that you guys might consider to using in parts of your projects. <span onclick="goVideo(this)" class="timestamp">04:14</span></p>
+<p>But today we are going to shift gears a little bit and ask another question. <span onclick="goVideo(this)" class="timestamp">04:23</span></p>
+<p>Which is, what's really going on inside convolutional networks. <span onclick="goVideo(this)" class="timestamp">04:27</span></p>
+<p>We've seen by this point in the class how to train convolutional networks. <span onclick="goVideo(this)" class="timestamp">04:30</span></p>
+<p>How to stitch up different types of architectures to attack different problems. <span onclick="goVideo(this)" class="timestamp">04:34</span></p>
+<p>But one question that you might have had in your mind, is what exactly is going on inside these networks? <span onclick="goVideo(this)" class="timestamp">04:37</span></p>
+<p>How did they do the things that they do? <span onclick="goVideo(this)" class="timestamp">04:42</span></p>
+<p>What kinds of features are they looking for? <span onclick="goVideo(this)" class="timestamp">04:44</span></p>
+<p>And all this source of related questions. <span onclick="goVideo(this)" class="timestamp">04:46</span></p>
+<p>So, so far we've sort of seen ConvNets as a little bit of a black box. <span onclick="goVideo(this)" class="timestamp">04:48</span></p>
+<p>Where some input image of raw pixels is coming in on one side. <span onclick="goVideo(this)" class="timestamp">04:53</span></p>
+<p>It goes to the many layers of convulsion and pooling in different sorts of transformations. <span onclick="goVideo(this)" class="timestamp">04:57</span></p>
+<p>And on the outside, we end up with some set of class scores or some types of understandable interpretable output. <span onclick="goVideo(this)" class="timestamp">05:01</span></p>
+<p>Such as class scores or bounding box positions or labeled pixels or something like that. <span onclick="goVideo(this)" class="timestamp">05:07</span></p>
+<p>But the question is. <span onclick="goVideo(this)" class="timestamp">05:12</span></p>
+<p>What are all these other layers in the middle doing? <span onclick="goVideo(this)" class="timestamp">05:13</span></p>
+<p>What kinds of things in the input image are they looking for? <span onclick="goVideo(this)" class="timestamp">05:15</span></p>
+<p>And can we try again intuition for. <span onclick="goVideo(this)" class="timestamp">05:18</span></p>
+<p>How ConvNets are working? <span onclick="goVideo(this)" class="timestamp">05:20</span></p>
+<p>What types of things in the image they are looking for? <span onclick="goVideo(this)" class="timestamp">05:22</span></p>
+<p>And what kinds of techniques do we have for analyzing this internals of the network? <span onclick="goVideo(this)" class="timestamp">05:24</span></p>
+<p>So, one relatively simple thing is the first layer. <span onclick="goVideo(this)" class="timestamp">05:29</span></p>
+<p>So, we've seen, we've talked about this before. <span onclick="goVideo(this)" class="timestamp">05:32</span></p>
+<p>But recalled that, the first convolutional layer consists of a filters that, so, for example in AlexNet. <span onclick="goVideo(this)" class="timestamp">05:34</span></p>
+<p>The first convolutional layer consists of a number of convolutional filters. <span onclick="goVideo(this)" class="timestamp">05:41</span></p>
+<p>Each convolutional of filter has shape 3 by 11 by 11. <span onclick="goVideo(this)" class="timestamp">05:45</span></p>
+<p>And these convolutional filters gets slid over the input image. <span onclick="goVideo(this)" class="timestamp">05:49</span></p>
+<p>We take inner products between some chunk of the image. <span onclick="goVideo(this)" class="timestamp">05:52</span></p>
+<p>And the weights of the convolutional filter. <span onclick="goVideo(this)" class="timestamp">05:54</span></p>
+<p>And that gives us our output of the at, at after that first convolutional layer. <span onclick="goVideo(this)" class="timestamp">05:56</span></p>
+<p>So, in AlexNet then we have 64 of these filters. <span onclick="goVideo(this)" class="timestamp">06:01</span></p>
+<p>But now in the first layer because we are taking in a direct inner product between the weights of the convolutional layer and the pixels of the image. <span onclick="goVideo(this)" class="timestamp">06:05</span></p>
+<p>We can get some since for what these filters are looking for by simply visualizing the learned weights of these filters as images themselves. <span onclick="goVideo(this)" class="timestamp">06:11</span></p>
+<p>So, for each of those 11 by 11 by 3 filters in AlexNet, we can just visualize that filter as a little 11 by 11 image with a three channels give you the red, green and blue values. <span onclick="goVideo(this)" class="timestamp">06:19</span></p>
+<p>And then because there are 64 of these filters we just visualize 64 little 11 by 11 images. <span onclick="goVideo(this)" class="timestamp">06:30</span></p>
+<p>And we can repeat... <span onclick="goVideo(this)" class="timestamp">06:35</span></p>
+<p>So we have shown here at the.</p>
+<p>So, these are filters taken from the prechain models, in the pi torch model zoo. <span onclick="goVideo(this)" class="timestamp">06:38</span></p>
+<p>And we are looking at the convolutional filters. <span onclick="goVideo(this)" class="timestamp">06:42</span></p>
+<p>The weights of the convolutional filters. <span onclick="goVideo(this)" class="timestamp">06:44</span></p>
+<p>at the first layer of AlexNet, ResNet-18, ResNet-101 and DenseNet-121. <span onclick="goVideo(this)" class="timestamp">06:45</span></p>
+<p>And you can see, kind of what all these layers what this filters looking for. <span onclick="goVideo(this)" class="timestamp">06:51</span></p>
+<p>You see the lot of things looking for oriented edges. <span onclick="goVideo(this)" class="timestamp">06:55</span></p>
+<p>Likes bars of light and dark. <span onclick="goVideo(this)" class="timestamp">06:59</span></p>
+<p>At various angles, in various angles and various positions in the input, we can see opposing colors. <span onclick="goVideo(this)" class="timestamp">07:01</span></p>
+<p>Like this are green and pink. <span onclick="goVideo(this)" class="timestamp">07:07</span></p>
+<p>opposing colors or this orange and blue opposing colors. <span onclick="goVideo(this)" class="timestamp">07:09</span></p>
+<p>So, this, this kind of connects back to what we talked about with Hugh and Wiesel. <span onclick="goVideo(this)" class="timestamp">07:12</span></p>
+<p>All the way in the first lecture. <span onclick="goVideo(this)" class="timestamp">07:16</span></p>
+<p>That remember the human visual system is known to the detect things like oriented edges. <span onclick="goVideo(this)" class="timestamp">07:17</span></p>
+<p>At the very early layers of the human visual system. <span onclick="goVideo(this)" class="timestamp">07:22</span></p>
+<p>And it turns out of that these convolutional networks tend to do something, somewhat similar. <span onclick="goVideo(this)" class="timestamp">07:24</span></p>
+<p>At their first convolutional layers as well. <span onclick="goVideo(this)" class="timestamp">07:29</span></p>
+<p>And what's kind of interesting is that pretty much no matter what type of architecture you hook up or whatever type of training data you are train it on. <span onclick="goVideo(this)" class="timestamp">07:31</span></p>
+<p>You almost always get the first layers of your. <span onclick="goVideo(this)" class="timestamp">07:37</span></p>
+<p>The first convolutional weights of any pretty much any convolutional network looking at images. <span onclick="goVideo(this)" class="timestamp">07:40</span></p>
+<p>Ends up looking something like this with oriented edges and opposing colors. <span onclick="goVideo(this)" class="timestamp">07:44</span></p>
+<p>Looking at that input image. <span onclick="goVideo(this)" class="timestamp">07:48</span></p>
+<p>But this really only, sorry what was that question? <span onclick="goVideo(this)" class="timestamp">07:51</span></p>
+<p>Yes, these are showing the learned weights of the first convolutional layer. <span onclick="goVideo(this)" class="timestamp">08:04</span></p>
+<p>Oh, so that the question is. <span onclick="goVideo(this)" class="timestamp">08:15</span></p>
+<p>Why does visualizing the weights of the filters? <span onclick="goVideo(this)" class="timestamp">08:16</span></p>
+<p>Tell you what the filter is looking for. <span onclick="goVideo(this)" class="timestamp">08:18</span></p>
+<p>So this intuition comes from sort of template matching and inner products. <span onclick="goVideo(this)" class="timestamp">08:21</span></p>
+<p>That if you imagine you have some, some template vector. <span onclick="goVideo(this)" class="timestamp">08:25</span></p>
+<p>And then you imagine you compute a scaler output by taking inner product between your template vector and some arbitrary piece of data. <span onclick="goVideo(this)" class="timestamp">08:28</span></p>
+<p>Then, the input which maximizes that activation. <span onclick="goVideo(this)" class="timestamp">08:35</span></p>
+<p>Under a norm constraint on the input is exactly when those two vectors match up. <span onclick="goVideo(this)" class="timestamp">08:38</span></p>
+<p>So, in that since that, when, whenever you're taking inner products, the thing causes an inner product to excite maximally is a copy of the thing you are taking an inner product with. <span onclick="goVideo(this)" class="timestamp">08:43</span></p>
+<p>So, that, that's why we can actually visualize these weights and that, why that shows us, what this first layer is looking for. <span onclick="goVideo(this)" class="timestamp">08:52</span></p>
+<p>So, for these networks the first layers always was a convolutional layer. <span onclick="goVideo(this)" class="timestamp">09:06</span></p>
+<p>So, generally whenever you are looking at image. <span onclick="goVideo(this)" class="timestamp">09:10</span></p>
+<p>Whenever you are thinking about image data and training convolutional networks, you generally put a convolutional layer at the first, at the first stop. <span onclick="goVideo(this)" class="timestamp">09:12</span></p>
+<p>Yeah, so the question is, can we do this same type of procedure in the middle open network. <span onclick="goVideo(this)" class="timestamp">09:28</span></p>
+<p>That's actually the next slide. <span onclick="goVideo(this)" class="timestamp">09:32</span></p>
+<p>So, good anticipation. <span onclick="goVideo(this)" class="timestamp">09:33</span></p>
+<p>So, if we do, if we draw this exact same visualization for the intermediate convolutional layers. <span onclick="goVideo(this)" class="timestamp">09:35</span></p>
+<p>It's actually a lot less interpretable. <span onclick="goVideo(this)" class="timestamp">09:39</span></p>
+<p>So, this is, this is performing exact same visualization. <span onclick="goVideo(this)" class="timestamp">09:41</span></p>
+<p>So, remember for this using the tiny ConvNets demo network that's running on the course website whenever you go there. <span onclick="goVideo(this)" class="timestamp">09:45</span></p>
+<p>So, for that network, the first layer is 7 by 7 convulsion 16 filters. <span onclick="goVideo(this)" class="timestamp">09:51</span></p>
+<p>So, after the top visualizing the first layer weights for this network just like we saw in a previous slide. <span onclick="goVideo(this)" class="timestamp">09:55</span></p>
+<p>But now at the second layer weights. <span onclick="goVideo(this)" class="timestamp">10:00</span></p>
+<p>After we do a convulsion then there's some relu and some other non-linearity perhaps. <span onclick="goVideo(this)" class="timestamp">10:02</span></p>
+<p>But the second convolutional layer, now receives the 16 channel input. <span onclick="goVideo(this)" class="timestamp">10:06</span></p>
+<p>And does 7 by 7 convulsion with 20 convolutional filters. <span onclick="goVideo(this)" class="timestamp">10:10</span></p>
+<p>And we've actually, so the problem is that you can't really visualize these directly as images. <span onclick="goVideo(this)" class="timestamp">10:15</span></p>
+<p>So, you can try, so, here if you this 16 by, so the input is this has 16 dimensions in depth. <span onclick="goVideo(this)" class="timestamp">10:20</span></p>
+<p>And we have these convolutional filters, each convolutional filter is 7 by 7, and is extending along the full depth so has 16 elements. <span onclick="goVideo(this)" class="timestamp">10:28</span></p>
+<p>Then we've 20 such of these convolutional filters, that are producing the output planes of the next layer. <span onclick="goVideo(this)" class="timestamp">10:35</span></p>
+<p>But the problem here is that we can't, looking at the, looking directly at the weights of these filters, doesn't really tell us much. <span onclick="goVideo(this)" class="timestamp">10:40</span></p>
+<p>So, we, that's really done here is that, now for this single 16 by 7 by 7 convolutional filter. <span onclick="goVideo(this)" class="timestamp">10:47</span></p>
+<p>We can spread out those 167 by 7 planes of the filter into a 167 by 7 grayscale images. <span onclick="goVideo(this)" class="timestamp">10:53</span></p>
+<p>So, that's what we've done. <span onclick="goVideo(this)" class="timestamp">11:01</span></p>
+<p>Up here, which is these little tiny gray scale images here show us what is, what are the weights in one of the convolutional filters of the second layer. <span onclick="goVideo(this)" class="timestamp">11:03</span></p>
+<p>And now, because there are 20 outputs from this layer. <span onclick="goVideo(this)" class="timestamp">11:11</span></p>
+<p>Then this second convolutional layer, has 2o such of these 16 by 16 or 16 by 7 by 7 filters. <span onclick="goVideo(this)" class="timestamp">11:14</span></p>
+<p>So if we visualize the weights of those convolutional filters as images, you can see that there are some kind of spacial structures here. <span onclick="goVideo(this)" class="timestamp">11:21</span></p>
+<p>But it doesn't really give you good intuition for what they are looking at. <span onclick="goVideo(this)" class="timestamp">11:28</span></p>
+<p>Because these filters are not looking, are not connected directly to the input image. <span onclick="goVideo(this)" class="timestamp">11:32</span></p>
+<p>Instead recall that the second layer convolutional filters are connected to the output of the first layer. <span onclick="goVideo(this)" class="timestamp">11:36</span></p>
+<p>So, this is giving visualization of, what type of activation pattern after the first convulsion, would cause the second layer convulsion to maximally activate. <span onclick="goVideo(this)" class="timestamp">11:41</span></p>
+<p>But, that's not very interpretable because we don't have a good sense for what those first layer convulsions look like in terms of image pixels. <span onclick="goVideo(this)" class="timestamp">11:50</span></p>
+<p>So we'll need to develop some slightly more fancy technique to get a sense for what is going on in the intermediate layers. <span onclick="goVideo(this)" class="timestamp">11:58</span></p>
+<p>Question in the back. <span onclick="goVideo(this)" class="timestamp">12:03</span></p>
+<p>Yeah. <span onclick="goVideo(this)" class="timestamp">12:09</span></p>
+<p>So the question is that for...</p>
+<p>all the visualization on this on the previous slide.</p>
+<p>We've had the scale the weights to the zero to 255 range. <span onclick="goVideo(this)" class="timestamp">12:13</span></p>
+<p>So in practice those weights could be unbounded. <span onclick="goVideo(this)" class="timestamp">12:16</span></p>
+<p>They could have any range. <span onclick="goVideo(this)" class="timestamp">12:18</span></p>
+<p>But to get nice visualizations we need to scale those. <span onclick="goVideo(this)" class="timestamp">12:19</span></p>
+<p>These visualizations also do not take in to account the bias is in these layers. <span onclick="goVideo(this)" class="timestamp">12:22</span></p>
+<p>So you should keep that in mind when and not take these HEPS visualizations to, to literally. <span onclick="goVideo(this)" class="timestamp">12:26</span></p>
+<p>Now at the last layer remember when we looking at the last layer of convolutional network. <span onclick="goVideo(this)" class="timestamp">12:34</span></p>
+<p>We have these maybe 1000 class scores that are telling us what are the predicted scores for each of the classes in our training data set and immediately before the last layer we often have some fully connected layer. <span onclick="goVideo(this)" class="timestamp">12:38</span></p>
+<p>In the case of Alex net we have some 4096- dimensional features representation of our image that then gets fed into that final our final layer to predict our final class scores. <span onclick="goVideo(this)" class="timestamp">12:48</span></p>
+<p>And one another, another kind of route for tackling the problem of visual, visualizing and understanding ConvNets is to try to understand what's happening at the last layer of a convolutional network. <span onclick="goVideo(this)" class="timestamp">12:58</span></p>
+<p>So what we can do is how to take some, some data set of images run a bunch of, run a bunch of images through our trained convolutional network and recorded that 4096 dimensional vector for each of those images. <span onclick="goVideo(this)" class="timestamp">13:07</span></p>
+<p>And now go through and try to figure out and visualize that last layer, that last hidden layer rather than those rather than the first convolutional layer. <span onclick="goVideo(this)" class="timestamp">13:18</span></p>
+<p>So, one thing you might imagine is, is trying a nearest neighbor approach. <span onclick="goVideo(this)" class="timestamp">13:26</span></p>
+<p>So, remember, way back in the second lecture we saw this graphic on the left where we, where we had a nearest neighbor classifier. <span onclick="goVideo(this)" class="timestamp">13:29</span></p>
+<p>Where we were looking at nearest neighbors in pixels space between CIFAR 10 images. <span onclick="goVideo(this)" class="timestamp">13:36</span></p>
+<p>And then when you look at nearest neighbors in pixel space between CIFAR 10 images you see that you pull up images that looks quite similar to the query image. <span onclick="goVideo(this)" class="timestamp">13:40</span></p>
+<p>So again on the left column here is some CIFAR 10 image from the CIFAR 10 data set and then these, these next five columns are showing the nearest neighbors in pixel space to those test set images. <span onclick="goVideo(this)" class="timestamp">13:48</span></p>
+<p>And so for example this white dog that you see here, it's nearest neighbors are in pixel space are these kinds of white blobby things that may, may or may not be dogs, but at least the raw pixels of the image are quite similar. <span onclick="goVideo(this)" class="timestamp">13:58</span></p>
+<p>So now we can do the same type of visualization computing and visualizing these nearest neighbor images. <span onclick="goVideo(this)" class="timestamp">14:11</span></p>
+<p>But rather than computing the nearest neighbors in pixel space, instead we can compute nearest neighbors in that 4096 dimensional feature space. <span onclick="goVideo(this)" class="timestamp">14:16</span></p>
+<p>Which is computed by the convolutional network. <span onclick="goVideo(this)" class="timestamp">14:24</span></p>
+<p>So here on the right we see some examples. <span onclick="goVideo(this)" class="timestamp">14:27</span></p>
+<p>So this, this first column shows us some examples of images from the test set of image that... <span onclick="goVideo(this)" class="timestamp">14:29</span></p>
+<p>Of the image net classification data set and now the, these subsequent columns show us nearest neighbors to those test set images in the 4096, in the 4096th dimensional features space computed by Alex net.</p>
+<p>And you can see here that this is quite different from the pixel space nearest neighbors, because the pixels are often quite different. <span onclick="goVideo(this)" class="timestamp">14:48</span></p>
+<p>between the image in it's nearest neighbors and feature space. <span onclick="goVideo(this)" class="timestamp">14:55</span></p>
+<p>However, the semantic content of those images tends to be similar in this feature space. <span onclick="goVideo(this)" class="timestamp">14:58</span></p>
+<p>So for example, if you look at this second layer the query image is this elephant standing on the left side of the image with a screen grass behind him. <span onclick="goVideo(this)" class="timestamp">15:03</span></p>
+<p>and now one of these, one of these... <span onclick="goVideo(this)" class="timestamp">15:10</span></p>
+<p>it's third nearest neighbor in the tough set is actually an elephant standing on the right side of the image. <span onclick="goVideo(this)" class="timestamp">15:12</span></p>
+<p>So this is really interesting. <span onclick="goVideo(this)" class="timestamp">15:17</span></p>
+<p>Because between this elephant standing on the left and this element stand, elephant standing on the right the pixels between those two images are almost entirely different. <span onclick="goVideo(this)" class="timestamp">15:18</span></p>
+<p>However, in the feature space which is learned by the network those two images and that being very close to each other. <span onclick="goVideo(this)" class="timestamp">15:26</span></p>
+<p>Which means that somehow this, this last their features is capturing some of those semantic content of these images. <span onclick="goVideo(this)" class="timestamp">15:32</span></p>
+<p>That's really cool and really exciting and, and in general looking at these kind of nearest neighbor visualizations is really quick and easy way to visualize something about what's going on here. <span onclick="goVideo(this)" class="timestamp">15:37</span></p>
+<p>Yes. <span onclick="goVideo(this)" class="timestamp">16:02</span></p>
+<p>So the question is that through the...</p>
+<p>the standard supervised learning procedure for classific training, classification network There's nothing in the loss encouraging these features to be close together.</p>
+<p>So that, that's true. <span onclick="goVideo(this)" class="timestamp">16:13</span></p>
+<p>It just kind of a happy accident that they end up being close to each other. <span onclick="goVideo(this)" class="timestamp">16:15</span></p>
+<p>Because we didn't tell the network during training these features should be close. <span onclick="goVideo(this)" class="timestamp">16:18</span></p>
+<p>However there are sometimes people do train networks using things called either contrastive loss or a triplet loss. <span onclick="goVideo(this)" class="timestamp">16:21</span></p>
+<p>Which actually explicitly make... <span onclick="goVideo(this)" class="timestamp">16:28</span></p>
+<p>assumptions and constraints on the network such that those last their features end up having some metric space interpretation. <span onclick="goVideo(this)" class="timestamp">16:31</span></p>
+<p>But Alex net at least was not trained specifically for that. <span onclick="goVideo(this)" class="timestamp">16:37</span></p>
+<p>The question is, what is the nearest... <span onclick="goVideo(this)" class="timestamp">16:44</span></p>
+<p>What is this nearest neighbor thing have to do at the last layer? <span onclick="goVideo(this)" class="timestamp">16:46</span></p>
+<p>So we're taking this image we're running it through the network and then the, the second to last like the last hidden layer of the network is of 4096th dimensional vector. <span onclick="goVideo(this)" class="timestamp">16:48</span></p>
+<p>Because there's this, this is... <span onclick="goVideo(this)" class="timestamp">16:57</span></p>
+<p>This is there, there are these fully connected layers at the end of the network. <span onclick="goVideo(this)" class="timestamp">16:58</span></p>
+<p>So we are doing is... <span onclick="goVideo(this)" class="timestamp">17:01</span></p>
+<p>We're writing down that 4096th dimensional vector for each of the images and then we are computing nearest neighbors according to that 4096th dimensional vector. <span onclick="goVideo(this)" class="timestamp">17:03</span></p>
+<p>Which is computed by, computed by the network. <span onclick="goVideo(this)" class="timestamp">17:10</span></p>
+<p>Maybe, maybe we can chat offline. <span onclick="goVideo(this)" class="timestamp">17:17</span></p>
+<p>So another, another, another another angle that we might have for visualizing what's going on in this last layer is by some concept of dimensionality reduction. <span onclick="goVideo(this)" class="timestamp">17:19</span></p>
+<p>So those of you who have taken CS229 for example you've seen something like PCA. <span onclick="goVideo(this)" class="timestamp">17:28</span></p>
+<p>Which let's you take some high dimensional representation like these 4096th dimensional features and then compress it down to two-dimensions. <span onclick="goVideo(this)" class="timestamp">17:33</span></p>
+<p>So then you can visualize that feature space more directly. <span onclick="goVideo(this)" class="timestamp">17:39</span></p>
+<p>So, Principle Component Analysis or PCA is kind of one way to do that. <span onclick="goVideo(this)" class="timestamp">17:43</span></p>
+<p>But there's real another really powerful algorithm called t-SNE. <span onclick="goVideo(this)" class="timestamp">17:47</span></p>
+<p>Standing for t-distributed stochastic neighbor embeddings. <span onclick="goVideo(this)" class="timestamp">17:51</span></p>
+<p>Which is slightly more powerful method. <span onclick="goVideo(this)" class="timestamp">17:54</span></p>
+<p>Which is a non-linear dimensionality reduction method that people in deep often use for visualizing features. <span onclick="goVideo(this)" class="timestamp">17:57</span></p>
+<p>So here as an, just an example of what t-SNE can do. <span onclick="goVideo(this)" class="timestamp">18:03</span></p>
+<p>This visualization here is, is showing a t-SNE dimensionality reduction on the emnest data set. <span onclick="goVideo(this)" class="timestamp">18:07</span></p>
+<p>So, emnest remember is this date set of hand written digits between zero and nine. <span onclick="goVideo(this)" class="timestamp">18:13</span></p>
+<p>Each image is a gray scale image 20... <span onclick="goVideo(this)" class="timestamp">18:17</span></p>
+<p>28 by 28 gray scale image and now we're...</p>
+<p>So that Now we've, we've used t-SNE to take that 28 times 28 dimensional features space of the raw pixels for m-nest and now compress it down to two- dimensions ans then visualize each of those m-nest digits in this compress two-dimensional representation and when you do, when you run t-SNE on the raw pixels and m-nest You can see these natural clusters appearing.</p>
+<p>Which corresponds to the, the digits of these m-nest of, of these m-nest data set. <span onclick="goVideo(this)" class="timestamp">18:42</span></p>
+<p>So now we can do a similar type of visualization. <span onclick="goVideo(this)" class="timestamp">18:47</span></p>
+<p>Where we apply this t-SNE dimensionality reduction technique to the features from the last layer of our trained image net classifier. <span onclick="goVideo(this)" class="timestamp">18:49</span></p>
+<p>So...To be a little bit more concrete here what we've done is that we take, a large set of images we run them off convolutional network. <span onclick="goVideo(this)" class="timestamp">18:57</span></p>
+<p>We record that final 4096th dimensional feature vector for, from the last layer of each of those images. <span onclick="goVideo(this)" class="timestamp">19:05</span></p>
+<p>Which gives us large collection of 4096th dimensional vectors. <span onclick="goVideo(this)" class="timestamp">19:10</span></p>
+<p>Now we apply t-SNE dimensionality reduction to compute, sort of compress that 4096the dimensional features space down into a two-dimensional feature space and now we, layout a grid in that compressed two-dimensional feature space and visualize what types of images appear at each location in the grid in this two-dimensional feature space. <span onclick="goVideo(this)" class="timestamp">19:14</span></p>
+<p>So by doing this you get some very close rough sense of what the geometry of this learned feature space looks like. <span onclick="goVideo(this)" class="timestamp">19:36</span></p>
+<p>So these images are little bit hard to see. <span onclick="goVideo(this)" class="timestamp">19:43</span></p>
+<p>So I'd encourage you to check out the high resolution versions online. <span onclick="goVideo(this)" class="timestamp">19:45</span></p>
+<p>But at least maybe on the left you can see that there's sort of one cluster in the bottom here of, of green things, is a different kind of flowers and there's other types of clusters for different types of dog breeds and another types of animals and, and locations. <span onclick="goVideo(this)" class="timestamp">19:48</span></p>
+<p>So there's sort of discontinuous semantic notion in this feature space. <span onclick="goVideo(this)" class="timestamp">20:01</span></p>
+<p>Which we can explore by looking through this t-SNE dimensionality reduction version of the, of the features. <span onclick="goVideo(this)" class="timestamp">20:06</span></p>
+<p>Is there question? <span onclick="goVideo(this)" class="timestamp">20:11</span></p>
+<p>Yeah. <span onclick="goVideo(this)" class="timestamp">20:23</span></p>
+<p>So the basic idea is that we're we, we have an image so now we end up with three different pieces of information about each image.</p>
+<p>We have the pixels of the image. <span onclick="goVideo(this)" class="timestamp">20:29</span></p>
+<p>We have the 4096th dimensional vector. <span onclick="goVideo(this)" class="timestamp">20:31</span></p>
+<p>Then we use t-SNE to convert the 4096th dimensional vector into a two-dimensional coordinate and then we take the original pixels of the image and place that at the two-dimensional coordinate corresponding to the dimensionality reduced version of the 4096th dimensional feature. <span onclick="goVideo(this)" class="timestamp">20:33</span></p>
+<p>Yeah, little bit involved here. <span onclick="goVideo(this)" class="timestamp">20:48</span></p>
+<p>Question in the front. <span onclick="goVideo(this)" class="timestamp">20:49</span></p>
+<p>The question is Roughly how much variants do these two-dimension explain? <span onclick="goVideo(this)" class="timestamp">20:55</span></p>
+<p>Well, I'm not sure of the exact number and I get little bit muddy when you're talking about t-SNE, because it's a non-linear dimensionality reduction technique. <span onclick="goVideo(this)" class="timestamp">20:59</span></p>
+<p>So, I'd have to look offline and I'm not sure of exactly how much it explains. <span onclick="goVideo(this)" class="timestamp">21:06</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">21:10</span></p>
+<p>Question is, can you do the same analysis of upper layers of the network? <span onclick="goVideo(this)" class="timestamp">21:14</span></p>
+<p>And yes, you can. <span onclick="goVideo(this)" class="timestamp">21:17</span></p>
+<p>But no, I don't have those visualizations here.</p>
+<p>Sorry.</p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">21:21</span></p>
+<p>The question is, Shouldn't we have overlaps of images once we do this dimensionality reduction? <span onclick="goVideo(this)" class="timestamp">21:35</span></p>
+<p>And yes, of course, you would. <span onclick="goVideo(this)" class="timestamp">21:39</span></p>
+<p>So this is just kind of taking a, nearest neighbor in our, in our regular grid and then picking an image close to that grid point. <span onclick="goVideo(this)" class="timestamp">21:40</span></p>
+<p>So, so... <span onclick="goVideo(this)" class="timestamp">21:47</span></p>
+<p>they, yeah.</p>
+<p>this is not showing you the kind of density in different parts of the feature space. <span onclick="goVideo(this)" class="timestamp">21:49</span></p>
+<p>So that's, that's another thing to look at and again at the link you, there's a couple more visualizations of this nature that, that address that a little bit. <span onclick="goVideo(this)" class="timestamp">21:54</span></p>
+<p>Okay. <span onclick="goVideo(this)" class="timestamp">22:03</span></p>
+<p>So another, another thing that you can do for some of these intermediate features is, so we talked a couple of slides ago that visualizing the weights of these intermediate layers is not so interpretable.</p>
+<p>But actually visualizing the activation maps of those intermediate layers is kind of interpretable in some cases. <span onclick="goVideo(this)" class="timestamp">22:13</span></p>
+<p>So for, so I, again an example of Alex Net. <span onclick="goVideo(this)" class="timestamp">22:20</span></p>
+<p>Remember the, the conv5 layers of Alex Net. <span onclick="goVideo(this)" class="timestamp">22:24</span></p>
+<p>Gives us this 128 by... <span onclick="goVideo(this)" class="timestamp">22:26</span></p>
+<p>The for...The conv5 features for any image is now 128 by 13 by 13 dimensional tensor. <span onclick="goVideo(this)" class="timestamp">22:28</span></p>
+<p>But we can think of that as 128 different 13 by 132-D grids. <span onclick="goVideo(this)" class="timestamp">22:35</span></p>
+<p>So now we can actually go and visualize each of those 13 by 13 elements slices of the feature map as a grayscale image and this gives us some sense for what types of things in the input are each of those features in that convolutional layer looking for. <span onclick="goVideo(this)" class="timestamp">22:42</span></p>
+<p>So this is a, a really cool interactive tool by Jason Yasenski you can just download. <span onclick="goVideo(this)" class="timestamp">22:58</span></p>
+<p>So it's run, so I don't have the video, it has a video on his website. <span onclick="goVideo(this)" class="timestamp">23:03</span></p>
+<p>But it's running a convolutional network on the inputs stream of webcam and then visualizing in real time each of those slices of that intermediate feature map give you a sense of what it's looking for and you can see that, so here the input image is this, this picture up in, settings... <span onclick="goVideo(this)" class="timestamp">23:06</span></p>
+<p>of this picture of a person in front of the camera and most of these intermediate features are kind of noisy, not much going on. <span onclick="goVideo(this)" class="timestamp">23:21</span></p>
+<p>But there's a, but there's this one highlighted intermediate feature where that is also shown larger here that seems that it's activating on the portions of the feature map corresponding to the person's face. <span onclick="goVideo(this)" class="timestamp">23:28</span></p>
+<p>Which is really interesting and that kind of, suggests that maybe this, this particular slice of the feature map of this layer of this particular network is maybe looking for human faces or something like that. <span onclick="goVideo(this)" class="timestamp">23:39</span></p>
+<p>Which is kind of a nice, kind of a nice and cool finding. <span onclick="goVideo(this)" class="timestamp">23:51</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">23:54</span></p>
+<p>The question is, Are the black activations dead relu's? <span onclick="goVideo(this)" class="timestamp">23:59</span></p>
+<p>So you got to be... <span onclick="goVideo(this)" class="timestamp">24:02</span></p>
+<p>a little careful with terminology.</p>
+<p>We usually say dead relu to mean something that's dead over the entire training data set. <span onclick="goVideo(this)" class="timestamp">24:04</span></p>
+<p>Here I would say that it's a relu, that, it's not active for this particular input. <span onclick="goVideo(this)" class="timestamp">24:09</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">24:14</span></p>
+<p>The question is, If there's no humans in image net how can it recognize a human face? <span onclick="goVideo(this)" class="timestamp">24:19</span></p>
+<p>There definitely are humans in image net I don't think it's, it's one of the cat... <span onclick="goVideo(this)" class="timestamp">24:22</span></p>
+<p>I don't think it's one of the thousand categories for the classification challenge. <span onclick="goVideo(this)" class="timestamp">24:26</span></p>
+<p>But people definitely appear in a lot of these images and that can be useful signal for detecting other types of things. <span onclick="goVideo(this)" class="timestamp">24:29</span></p>
+<p>So that's actually kind of nice results because that shows that, it's sort of can learn features that are useful for the classification task at hand. <span onclick="goVideo(this)" class="timestamp">24:34</span></p>
+<p>That are even maybe a little bit different from the explicit classification task that we told it to perform. <span onclick="goVideo(this)" class="timestamp">24:41</span></p>
+<p>So it's actually really cool results. <span onclick="goVideo(this)" class="timestamp">24:45</span></p>
+<p>Okay, question? <span onclick="goVideo(this)" class="timestamp">24:50</span></p>
+<p>So at each layer in the convolutional network our input image is of three, it's like 3 by 224 by 224 and then it goes through many stages of convolution. <span onclick="goVideo(this)" class="timestamp">24:55</span></p>
+<p>And then, it, after each convolutional layer is some three dimensional chunk of numbers. <span onclick="goVideo(this)" class="timestamp">25:03</span></p>
+<p>Which are the outputs from that layer of the convolutional network. <span onclick="goVideo(this)" class="timestamp">25:07</span></p>
+<p>And that into the entire three dimensional chunk of numbers which are the output of the previous convolutional layer, we call, we call, like an activation volume and then one of those, one of those slices is a, it's an activation map. <span onclick="goVideo(this)" class="timestamp">25:10</span></p>
+<p>So the question is, If the image is K by K will the activation map be K by K? <span onclick="goVideo(this)" class="timestamp">25:34</span></p>
+<p>Not always because there can be sub sampling due to pool, straight convolution and pooling. <span onclick="goVideo(this)" class="timestamp">25:38</span></p>
+<p>But in general, the, the size of each activation map will be linear in the size of the input image. <span onclick="goVideo(this)" class="timestamp">25:42</span></p>
+<p>So another, another kind of useful thing we can do for visualizing intermediate features is... <span onclick="goVideo(this)" class="timestamp">25:50</span></p>
+<p>Visualizing what types of patches from input images cause maximal activation in different, different features, different neurons. <span onclick="goVideo(this)" class="timestamp">25:55</span></p>
+<p>So what we've done here is that, we pick... <span onclick="goVideo(this)" class="timestamp">26:03</span></p>
+<p>Maybe again the con five layer from Alex Net? <span onclick="goVideo(this)" class="timestamp">26:06</span></p>
+<p>And remember each of these activation volumes at the con, at the con five in Alex net gives us a 128 by 13 by 13 chunk of numbers. <span onclick="goVideo(this)" class="timestamp">26:08</span></p>
+<p>Then we'll pick one of those 128 channels. <span onclick="goVideo(this)" class="timestamp">26:15</span></p>
+<p>Maybe channel 17 and now what we'll do is run many images through this convolutional network. <span onclick="goVideo(this)" class="timestamp">26:17</span></p>
+<p>And then, for each of those images record the con five features and then look at the... <span onclick="goVideo(this)" class="timestamp">26:23</span></p>
+<p>Right, so, then, then look at the, the... <span onclick="goVideo(this)" class="timestamp">26:30</span></p>
+<p>The parts of that 17th feature map that are maximally activated over our data set of images. <span onclick="goVideo(this)" class="timestamp">26:32</span></p>
+<p>And now, because again this is a convolutional layer each of those neurons in the convolutional layer has some small receptive field in the input. <span onclick="goVideo(this)" class="timestamp">26:37</span></p>
+<p>Each of those neurons is not looking at the whole image. <span onclick="goVideo(this)" class="timestamp">26:45</span></p>
+<p>They're only looking at the sub set of the image. <span onclick="goVideo(this)" class="timestamp">26:47</span></p>
+<p>Then what we'll do is, is visualize the patches from the, from this large data set of images corresponding to the maximal activations of that, of that feature, of that particular feature in that particular layer. <span onclick="goVideo(this)" class="timestamp">26:49</span></p>
+<p>And then we can sorts these out, sort these patches by their activation at that, at that particular layer. <span onclick="goVideo(this)" class="timestamp">27:00</span></p>
+<p>So here is a, some examples from this... <span onclick="goVideo(this)" class="timestamp">27:06</span></p>
+<p>Network called a, fully... <span onclick="goVideo(this)" class="timestamp">27:09</span></p>
+<p>The network doesn't matter. <span onclick="goVideo(this)" class="timestamp">27:11</span></p>
+<p>But these are some visualizations of these kind of maximally activating patches. <span onclick="goVideo(this)" class="timestamp">27:12</span></p>
+<p>So, each, each row gives... <span onclick="goVideo(this)" class="timestamp">27:16</span></p>
+<p>We've chosen one layer from or one neuron from one layer of a network and then each, and then, the, they're sorted of these are the patches from some large data set of images. <span onclick="goVideo(this)" class="timestamp">27:18</span></p>
+<p>That maximally activated this one neuron. <span onclick="goVideo(this)" class="timestamp">27:28</span></p>
+<p>And these can give you a sense for what type of features these, these neurons might be looking for. <span onclick="goVideo(this)" class="timestamp">27:30</span></p>
+<p>So for example, this top row we see a lot of circly kinds of things in the image. <span onclick="goVideo(this)" class="timestamp">27:35</span></p>
+<p>Some eyes, some, mostly eyes. <span onclick="goVideo(this)" class="timestamp">27:39</span></p>
+<p>But also this, kind of blue circly region. <span onclick="goVideo(this)" class="timestamp">27:42</span></p>
+<p>So then, maybe this, this particular neuron in this particular layer of this network is looking for kind of blue circly things in the input. <span onclick="goVideo(this)" class="timestamp">27:44</span></p>
+<p>Or maybe in the middle here we have neurons that are looking for text in different colors or, or maybe curving, curving edges of different colors and orientations. <span onclick="goVideo(this)" class="timestamp">27:51</span></p>
+<p>Yeah, so, I've been a little bit loose with terminology here. <span onclick="goVideo(this)" class="timestamp">28:06</span></p>
+<p>So, I'm saying that a neuron is one scaler value in that con five activation map. <span onclick="goVideo(this)" class="timestamp">28:09</span></p>
+<p>But because it's convolutional, all the neurons in one channel are all using the same weights. <span onclick="goVideo(this)" class="timestamp">28:13</span></p>
+<p>So we've chosen one channel and then, right? <span onclick="goVideo(this)" class="timestamp">28:19</span></p>
+<p>So, you get a lot of neurons for each convolutional filter at any one layer. <span onclick="goVideo(this)" class="timestamp">28:22</span></p>
+<p>So, we, we could have been, so this patches could've been drawn from anywhere in the image due to the convolutional nature of the thing. <span onclick="goVideo(this)" class="timestamp">28:26</span></p>
+<p>And now at the bottom we also see some maximally activating patches for neurons from a higher up layer in the same network. <span onclick="goVideo(this)" class="timestamp">28:32</span></p>
+<p>And now because they are coming from higher in the network they have a larger receptive field. <span onclick="goVideo(this)" class="timestamp">28:38</span></p>
+<p>So, they're looking at larger patches of the input image and we can also see that they're looking for maybe larger structures in the input image. <span onclick="goVideo(this)" class="timestamp">28:42</span></p>
+<p>So this, this second row is maybe looking, it seems to be looking for human, humans or maybe human faces. <span onclick="goVideo(this)" class="timestamp">28:49</span></p>
+<p>We have maybe something looking for... <span onclick="goVideo(this)" class="timestamp">28:56</span></p>
+<p>Parts of cameras or different types of larger, larger, larger object like type things, types of things. <span onclick="goVideo(this)" class="timestamp">28:59</span></p>
+<p>Another, another cool experiment we can do which comes from Zeiler and Fergus ECCV 2014 paper. <span onclick="goVideo(this)" class="timestamp">29:06</span></p>
+<p>is this idea of an exclusion experiment. <span onclick="goVideo(this)" class="timestamp">29:11</span></p>
+<p>So, what we want to do is figure out which parts of the input, of the input image cause the network to make it's classification decision. <span onclick="goVideo(this)" class="timestamp">29:14</span></p>
+<p>So, what we'll do is, we'll take our input image in this case an elephant and then we'll block out some part of that, some region in that input image and just replace it with the mean pixel value from the data set. <span onclick="goVideo(this)" class="timestamp">29:21</span></p>
+<p>And now, run that occluded image throughout, through the network and then record what is the predicted probability of this occluded image? <span onclick="goVideo(this)" class="timestamp">29:32</span></p>
+<p>And now slide this occluded patch over every position in the input image and then repeat the same process. <span onclick="goVideo(this)" class="timestamp">29:39</span></p>
+<p>And then draw this heat map showing, what was the predicted probability output from the network as a function of where did, which part of the input image did we occlude? <span onclick="goVideo(this)" class="timestamp">29:44</span></p>
+<p>And the idea is that if when we block out some part of the image if that causes the network score to change drastically. <span onclick="goVideo(this)" class="timestamp">29:53</span></p>
+<p>Then probably that part of the input image was really important for the classification decision. <span onclick="goVideo(this)" class="timestamp">29:59</span></p>
+<p>So here we've shown... <span onclick="goVideo(this)" class="timestamp">30:04</span></p>
+<p>I've shown three different examples of... <span onclick="goVideo(this)" class="timestamp">30:06</span></p>
+<p>Of this occlusion type experiment. <span onclick="goVideo(this)" class="timestamp">30:09</span></p>
+<p>So, maybe this example of a Go-kart at the bottom, you can see over here that when we, so here, red, the, the red corresponds to a low probability and the white and yellow corresponds to a high probability. <span onclick="goVideo(this)" class="timestamp">30:11</span></p>
+<p>So when we block out the region of the image corresponding to this Go-kart in front. <span onclick="goVideo(this)" class="timestamp">30:23</span></p>
+<p>Then the predicted probability for the Go-kart class drops a lot. <span onclick="goVideo(this)" class="timestamp">30:27</span></p>
+<p>So that gives us some sense that the network is actually caring a lot about these, these pixels in the input image in order to make it's classification decision. <span onclick="goVideo(this)" class="timestamp">30:30</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">30:38</span></p>
+<p>Yes, the question is that, what's going on in the background? <span onclick="goVideo(this)" class="timestamp">30:47</span></p>
+<p>So maybe if the image is a little bit too small to tell but, there's, this is actually a Go-kart track and there's a couple other Go-karts in the background. <span onclick="goVideo(this)" class="timestamp">30:49</span></p>
+<p>So I think that, when you're blocking out these other Go-karts in the background, that's also influencing the score or maybe like the horizon is there and maybe the horizon is an useful feature for detecting Go-karts, it's a little bit hard to tell sometimes. <span onclick="goVideo(this)" class="timestamp">30:56</span></p>
+<p>But this is a pretty cool visualization. <span onclick="goVideo(this)" class="timestamp">31:07</span></p>
+<p>Yeah, was there another question? <span onclick="goVideo(this)" class="timestamp">31:08</span></p>
+<p>So the question is, sorry, sorry, what was the first question? <span onclick="goVideo(this)" class="timestamp">31:20</span></p>
+<p>So, the, so the question... <span onclick="goVideo(this)" class="timestamp">31:30</span></p>
+<p>So for, for this example we're taking one image and then masking all parts of one image. <span onclick="goVideo(this)" class="timestamp">31:32</span></p>
+<p>The second question was, how is this useful? <span onclick="goVideo(this)" class="timestamp">31:36</span></p>
+<p>It's not, maybe, you don't really take this information and then loop it directly into the training process. <span onclick="goVideo(this)" class="timestamp">31:38</span></p>
+<p>Instead, this is a way, a tool for humans to understand, what types of computations these train networks are doing. <span onclick="goVideo(this)" class="timestamp">31:42</span></p>
+<p>So it's more for your understanding than for improving performance per se. <span onclick="goVideo(this)" class="timestamp">31:49</span></p>
+<p>So another, another related idea is this concept of a Saliency Map. <span onclick="goVideo(this)" class="timestamp">31:54</span></p>
+<p>Which is something that you will see in your homeworks. <span onclick="goVideo(this)" class="timestamp">31:57</span></p>
+<p>So again, we have the same question of given an input image of a dog in this case and the predicted class label of dog we want to know which pixels in the input image are important for classification. <span onclick="goVideo(this)" class="timestamp">32:00</span></p>
+<p>We saw masking, is one way to get at this question. <span onclick="goVideo(this)" class="timestamp">32:11</span></p>
+<p>But Saliency Maps are another, another, angle for attacking this problem. <span onclick="goVideo(this)" class="timestamp">32:14</span></p>
+<p>And the question is, and one relatively simple idea from Karen Simonenian's paper, a couple years ago. <span onclick="goVideo(this)" class="timestamp">32:19</span></p>
+<p>Is, this is just computing the gradient of the predicted class score with respect to the pixels of the input image. <span onclick="goVideo(this)" class="timestamp">32:25</span></p>
+<p>And this will directly tell us in this sort of, first order approximation sense. <span onclick="goVideo(this)" class="timestamp">32:31</span></p>
+<p>For each input, for each pixel in the input image if we wiggle that pixel a little bit then how much will the classification score for the class change? <span onclick="goVideo(this)" class="timestamp">32:36</span></p>
+<p>And this is another way to get at this question of which pixels in the input matter for the classification. <span onclick="goVideo(this)" class="timestamp">32:43</span></p>
+<p>And when we, and when we run for example Saliency, where computer Saliency map for this dog, we see kind of a nice outline of a dog in the image. <span onclick="goVideo(this)" class="timestamp">32:50</span></p>
+<p>Which tells us that these are probably the pixels of that, network is actually looking at, for this image. <span onclick="goVideo(this)" class="timestamp">32:59</span></p>
+<p>And when we repeat this type of process for different images, we get some sense that the network is sort of looking at the right regions. <span onclick="goVideo(this)" class="timestamp">33:04</span></p>
+<p>Which is somewhat comforting. <span onclick="goVideo(this)" class="timestamp">33:11</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">33:13</span></p>
+<p>The question is, do people use Saliency Maps for semantic segmentation? <span onclick="goVideo(this)" class="timestamp">33:17</span></p>
+<p>The answer is yes.</p>
+<p>That actually was... <span onclick="goVideo(this)" class="timestamp">33:21</span></p>
+<p>Yeah, you guys are like really on top of it this lecture. <span onclick="goVideo(this)" class="timestamp">33:23</span></p>
+<p>So that was another component, again in Karen's paper. <span onclick="goVideo(this)" class="timestamp">33:26</span></p>
+<p>Where there's this idea that maybe you can use these Saliency Maps to perform semantic segmentation without direct, without any labeled data for the, for these, for these segments. <span onclick="goVideo(this)" class="timestamp">33:29</span></p>
+<p>So here they're using this Grabcut Segmentation Algorithm which I don't really want to get into the details of. <span onclick="goVideo(this)" class="timestamp">33:38</span></p>
+<p>But it's kind of an interactive segmentation algorithm that you can use. <span onclick="goVideo(this)" class="timestamp">33:43</span></p>
+<p>So then when you combine this Saliency Map with this Grabcut Segmentation Algorithm then you can in fact, sometimes segment out the object in the image. <span onclick="goVideo(this)" class="timestamp">33:47</span></p>
+<p>Which is really cool. <span onclick="goVideo(this)" class="timestamp">33:55</span></p>
+<p>However I'd like to point out that this is a little bit brittle and in general if you, this will probably work much, much, much, worse than a network which did have access to supervision and training time. <span onclick="goVideo(this)" class="timestamp">33:57</span></p>
+<p>So, I don't, I'm not sure how, how practical this is. <span onclick="goVideo(this)" class="timestamp">34:07</span></p>
+<p>But it is pretty cool that it works at all. <span onclick="goVideo(this)" class="timestamp">34:10</span></p>
+<p>But it probably works much less than something trained explicitly to segment with supervision. <span onclick="goVideo(this)" class="timestamp">34:13</span></p>
+<p>So kind of another, another related idea is this idea of, of guided back propagation. <span onclick="goVideo(this)" class="timestamp">34:19</span></p>
+<p>So again, we still want to answer the question of for one particular, for one particular image. <span onclick="goVideo(this)" class="timestamp">34:23</span></p>
+<p>Then now instead of looking at the class score we want to know, we want to pick some intermediate neuron in the network and ask again, which parts of the input image influence the score of that neuron, that internal neuron in the network. <span onclick="goVideo(this)" class="timestamp">34:30</span></p>
+<p>And, and then you could imagine, again you could imagine computing a Saliency Map for this again, right? <span onclick="goVideo(this)" class="timestamp">34:44</span></p>
+<p>That rather than computing the gradient of the class scores with respect to the pixels of the image. <span onclick="goVideo(this)" class="timestamp">34:49</span></p>
+<p>You could compute the gradient of some intermediate value in the network with respect to the pixels of the image. <span onclick="goVideo(this)" class="timestamp">34:53</span></p>
+<p>And that would tell us again which parts, which pixels in the input image influence that value of that particular neuron. <span onclick="goVideo(this)" class="timestamp">34:58</span></p>
+<p>And that would be using normal back propagation. <span onclick="goVideo(this)" class="timestamp">35:05</span></p>
+<p>But it turns out that there is a slight tweak that we can do to this back propagation procedure that ends up giving some slightly cleaner images. <span onclick="goVideo(this)" class="timestamp">35:08</span></p>
+<p>So that's this idea of guided back propagation that again comes from Zeiler and Fergus's 2014 paper. <span onclick="goVideo(this)" class="timestamp">35:15</span></p>
+<p>And I don't really want to get into the details too much here but, it, you just, it's kind of weird tweak where you change the way that you back propagate through relu non-linearities. <span onclick="goVideo(this)" class="timestamp">35:21</span></p>
+<p>And you sort of, only, only back propagate positive gradients through relu's and you do not back propagate negative gradients through the relu's. <span onclick="goVideo(this)" class="timestamp">35:30</span></p>
+<p>So you're no longer computing the true gradient instead you're kind of only keeping track of positive influences on throughout the entire network. <span onclick="goVideo(this)" class="timestamp">35:37</span></p>
+<p>So maybe you should read through these, these papers reference to your, if you want a little bit more details about why that's a good idea. <span onclick="goVideo(this)" class="timestamp">35:46</span></p>
+<p>But empirically, when you do guided back propagation as appose to regular back propagation. <span onclick="goVideo(this)" class="timestamp">35:53</span></p>
+<p>You tend to get much cleaner, nicer images. <span onclick="goVideo(this)" class="timestamp">35:59</span></p>
+<p>that tells you, which part, which pixel of the input image influence that particular neuron. <span onclick="goVideo(this)" class="timestamp">36:01</span></p>
+<p>So, again we were seeing the same visualization we saw a few slides ago of the maximally activating patches. <span onclick="goVideo(this)" class="timestamp">36:07</span></p>
+<p>But now, in addition to visualizing these maximally activating patches. <span onclick="goVideo(this)" class="timestamp">36:16</span></p>
+<p>We've also performed guided back propagation, to tell us exactly which parts of these patches influence the score of that neuron. <span onclick="goVideo(this)" class="timestamp">36:20</span></p>
+<p>So, remember for this example at the top, we saw that, we thought this neuron is may be looking for circly tight things, in the input patch because there're allot of circly tight patches. <span onclick="goVideo(this)" class="timestamp">36:27</span></p>
+<p>Well, when we look at guided back propagation We can see with that intuition is somewhat confirmed because it is indeed the circly parts of that input patch which are influencing that, that neuron value. <span onclick="goVideo(this)" class="timestamp">36:37</span></p>
+<p>So, this is kind of a useful to all for synthesizing. <span onclick="goVideo(this)" class="timestamp">36:49</span></p>
+<p>For understanding what these different intermediates are looking for. <span onclick="goVideo(this)" class="timestamp">36:52</span></p>
+<p>But, one kind of interesting thing about guided back propagation or computing saliency maps. <span onclick="goVideo(this)" class="timestamp">36:56</span></p>
+<p>Is that there's always a function of fixed input image, right, they're telling us for a fixed input image, which pixel or which parts of that input image influence the value of the neuron. <span onclick="goVideo(this)" class="timestamp">37:01</span></p>
+<p>Another question you might answer is is remove this reliance, on that, on some input image. <span onclick="goVideo(this)" class="timestamp">37:12</span></p>
+<p>And then instead just ask what type of input in general would cause this neuron to activate and we can answer this question using a technical Gradient ascent so, remember we always use Gradient decent to train our convolutional networks by minimizing the loss. <span onclick="goVideo(this)" class="timestamp">37:19</span></p>
+<p>Instead now, we want to fix the, fix the weight of our trained convolutional network and instead synthesizing image by performing Gradient ascent on the pixels of the image to try and maximize the score of some intermediate neuron or of some class. <span onclick="goVideo(this)" class="timestamp">37:34</span></p>
+<p>So, in a process of Gradient ascent, we're no longer optimizing over the weights of the network those weights remained fixed instead we're trying to change pixels of some input image to cause this neuron, or this neuron value, or this class score to maximally, to be maximized but, instead but, in addition we need some regularization term so, remember we always a, we before seeing regularization terms to try to prevent the network weights from over fitting to the training data. <span onclick="goVideo(this)" class="timestamp">37:50</span></p>
+<p>Now, we need something kind of similar to prevent the pixels of our generated image from over fitting to the peculiarities of that particular network. <span onclick="goVideo(this)" class="timestamp">38:19</span></p>
+<p>So, here we'll often incorporate some regularization term that, we're kind of, we want a generated image of two properties one, we wanted to maximally activate some, some score or some neuron value. <span onclick="goVideo(this)" class="timestamp">38:27</span></p>
+<p>But, we also wanted to look like a natural image. <span onclick="goVideo(this)" class="timestamp">38:39</span></p>
+<p>we wanted to kind of have, the kind of statistics that we typically see in natural images. <span onclick="goVideo(this)" class="timestamp">38:42</span></p>
+<p>So, these regularization term in the subjective is something to enforce a generated image to look relatively natural. <span onclick="goVideo(this)" class="timestamp">38:46</span></p>
+<p>And we'll see a couple of different examples of regualizers as we go through. <span onclick="goVideo(this)" class="timestamp">38:52</span></p>
+<p>But, the general strategy for this is actually pretty simple and again informant allot of things of this nature on your assignment three. <span onclick="goVideo(this)" class="timestamp">38:57</span></p>
+<p>But, what we'll do is start with some initial image either initializing to zeros or to uniform or noise. <span onclick="goVideo(this)" class="timestamp">39:04</span></p>
+<p>But, initialize your image in some way and I'll repeat where you forward your image through 3D network and compute the score or, or neuron value that you're interested. <span onclick="goVideo(this)" class="timestamp">39:10</span></p>
+<p>Now, back propagate to compute the Gradient of that neuron score with respect to the pixels of the image and then make a small Gradient ascent or Gradient ascent update to the pixels of the images itself. <span onclick="goVideo(this)" class="timestamp">39:19</span></p>
+<p>To try and maximize that score. <span onclick="goVideo(this)" class="timestamp">39:32</span></p>
+<p>And I'll repeat this process over and over again, until you have a beautiful image. <span onclick="goVideo(this)" class="timestamp">39:33</span></p>
+<p>And, then we talked, we talked about the image regularizer, well a very simple, a very simple idea for image regularizer is simply to penalize L2 norm of a generated image This is not so semantically meaningful, it's just does something, and this was one of the, one of the earliest regularizer that we've seen in the literature for these type of generating images type of papers. <span onclick="goVideo(this)" class="timestamp">39:38</span></p>
+<p>And, when you run this on a trained network you can see that now we're trying to generate images that maximize the dumble score in the upper left hand corner here for example. <span onclick="goVideo(this)" class="timestamp">40:01</span></p>
+<p>And, then you can see that the synthesized image, it been, it's little bit hard to see may be but there're allot of different dumble like shapes, all kind of super impose that different portions of the image. <span onclick="goVideo(this)" class="timestamp">40:12</span></p>
+<p>or if we try to generate an image for cups then we can may be see a bunch of different cups all kind of super imposed the Dalmatian is pretty cool, because now we can see kind of this black and white spotted pattern that's kind of characteristics of Dalmatians or for lemons we can see these different kinds of yellow splotches in the image. <span onclick="goVideo(this)" class="timestamp">40:23</span></p>
+<p>And there's a couple of more examples here, I think may be the goose is kind of cool or the kitfox are actually may be looks like kitfox. <span onclick="goVideo(this)" class="timestamp">40:40</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">40:46</span></p>
+<p>The question is, why are these all rainbow colored and in general getting true colors out of this visualization is pretty tricky. <span onclick="goVideo(this)" class="timestamp">40:55</span></p>
+<p>Right, because any, any actual image will be bounded in the range zero to 255. <span onclick="goVideo(this)" class="timestamp">41:02</span></p>
+<p>So, it really should be some kind of constrained optimization problem But, if, for using this generic methods for Gradient ascent then we, that's going to be unconstrained problem. <span onclick="goVideo(this)" class="timestamp">41:06</span></p>
+<p>So, you may be use like projector Gradient ascent algorithm or your rescaled image at the end. <span onclick="goVideo(this)" class="timestamp">41:15</span></p>
+<p>So, the colors that you see in this visualizations, sometimes are you cannot take them too seriously. <span onclick="goVideo(this)" class="timestamp">41:21</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">41:27</span></p>
+<p>The question is what happens, if you let the thing loose and don't put any regularizer on it. <span onclick="goVideo(this)" class="timestamp">41:32</span></p>
+<p>Well, then you tend to get an image which maximize the score which is confidently classified as the class you wanted but, usually it doesn't look like anything. <span onclick="goVideo(this)" class="timestamp">41:36</span></p>
+<p>It kind of look likes random noise. <span onclick="goVideo(this)" class="timestamp">41:46</span></p>
+<p>So, that's kind of an interesting property in itself that will go into much more detail in a future lecture. <span onclick="goVideo(this)" class="timestamp">41:48</span></p>
+<p>But, that's why, that kind of doesn't help you so much for understanding what things the network is looking for. <span onclick="goVideo(this)" class="timestamp">41:54</span></p>
+<p>So, if we want to understand, why the network thing makes its decisions then it's kind of useful to put regularizer on there to generate an image to look more natural. <span onclick="goVideo(this)" class="timestamp">42:00</span></p>
+<p>A question in the back. <span onclick="goVideo(this)" class="timestamp">42:09</span></p>
+<p>Yeah, so the question is that we see a lot of multi modality here, and other ways to combat that. <span onclick="goVideo(this)" class="timestamp">42:34</span></p>
+<p>And actually yes, we'll see that, this is kind of first step in the whole line of work in improving these visualizations. <span onclick="goVideo(this)" class="timestamp">42:38</span></p>
+<p>So, another, another kind of, so then the angle here is a kind of to improve the regularizer to improve our visualized images. <span onclick="goVideo(this)" class="timestamp">42:44</span></p>
+<p>And there's a another paper from Jason Yesenski and some of his collaborators where they added some additional impressive regularizers. <span onclick="goVideo(this)" class="timestamp">42:51</span></p>
+<p>So, in addition to this L2 norm constraint, in addition we also periodically during optimization, and do some gauche and blurring on the image, we're also clip some,. <span onclick="goVideo(this)" class="timestamp">42:58</span></p>
+<p>some small value, some small pixel values all the way to zero, we're also clip some of the, some of the pixel values of low Gradients to zero So, you can see this is kind of a projector Gradient ascent algorithm where it reach periodically we're projecting our generated image onto some nicer set of images with some nicer properties. <span onclick="goVideo(this)" class="timestamp">43:07</span></p>
+<p>For example, special smoothness with respect to the gauchian blurring So, when you do this, you tend to get much nicer images that are much clear to see. <span onclick="goVideo(this)" class="timestamp">43:24</span></p>
+<p>So, now these flamingos look like flamingos the ground beetle is starting to look more beetle like or this black swan maybe looks like a black swan. <span onclick="goVideo(this)" class="timestamp">43:32</span></p>
+<p>These billiard tables actually look kind of impressive now, where you can definitely see this billiard table structure. <span onclick="goVideo(this)" class="timestamp">43:41</span></p>
+<p>So, you can see that once you add in nicer regularizers, then the generated images become a bit, a little bit cleaner. <span onclick="goVideo(this)" class="timestamp">43:48</span></p>
+<p>And, now we can perform this procedure not only for the final class course, but also for these intermediate neurons as well. <span onclick="goVideo(this)" class="timestamp">43:55</span></p>
+<p>So, instead of trying to maximize our billiard table score for example instead we can get maximize one of the neurons from some intermediate layer Question. <span onclick="goVideo(this)" class="timestamp">44:01</span></p>
+<p>So, the question is what's with the for example here, so those who remember initializing our image randomly so, these four images would be different random initialization of the input image. <span onclick="goVideo(this)" class="timestamp">44:16</span></p>
+<p>And again, we can use these same type of procedure to visualize, to synthesis images which maximally activate intermediate neurons of the network. <span onclick="goVideo(this)" class="timestamp">44:28</span></p>
+<p>And, then you can get a sense from some of these intermediate neurons are looking for, so may be at layer four there's neuron that's kind of looking for spirally things or there's neuron that's may be looking for like chunks of caterpillars it's a little bit harder to tell. <span onclick="goVideo(this)" class="timestamp">44:36</span></p>
+<p>But, in generally as you go larger up in the image then you can see that the one, the obviously receptive fields of these neurons are larger. <span onclick="goVideo(this)" class="timestamp">44:49</span></p>
+<p>So, you're looking at the larger patches in the image. <span onclick="goVideo(this)" class="timestamp">44:56</span></p>
+<p>And they tend to be looking for may be larger structures or more complex patterns in the input image. <span onclick="goVideo(this)" class="timestamp">44:58</span></p>
+<p>That's pretty cool. <span onclick="goVideo(this)" class="timestamp">45:03</span></p>
+<p>And, then people have really gone crazy with this and trying to, they basically improve these visualization by keeping on extra features So, this was a cool paper kind of explicitly trying to address this multi modality, there's someone asked question about a few minutes ago. <span onclick="goVideo(this)" class="timestamp">45:07</span></p>
+<p>So, here they were trying to explicitly take a count, take this multi modality into account in the optimization procedure where they did indeed, I think see the initial, so they for each of the classes, you run a clustering algorithm to try to separate the classes into different modes and then initialize with something that is close to one of those modes. <span onclick="goVideo(this)" class="timestamp">45:23</span></p>
+<p>And, then when you do that, you kind of account for this multi modality. <span onclick="goVideo(this)" class="timestamp">45:42</span></p>
+<p>so for intuition, on the right here these eight images are all of grocery stores. <span onclick="goVideo(this)" class="timestamp">45:45</span></p>
+<p>But, the top row, is kind of close up pictures of produce on the shelf and those are labeled as grocery stores And the bottom row kind of shows people walking around grocery stores or at the checkout line or something like that. <span onclick="goVideo(this)" class="timestamp">45:51</span></p>
+<p>And, those are also labeled those as grocery store, but their visual appearance is quiet different. <span onclick="goVideo(this)" class="timestamp">46:04</span></p>
+<p>So, a lot of these classes and that being sort multi modal And, if you can take, and if you explicitly take this more time mortality into account when generating images, then you can get nicer results. <span onclick="goVideo(this)" class="timestamp">46:08</span></p>
+<p>And now, then when you look at some of their example, synthesis images for classes, you can see like the bell pepper, the card on, strawberries, jackolantern now they end up with some very beautifully generated images. <span onclick="goVideo(this)" class="timestamp">46:17</span></p>
+<p>And now, I don't want to get to much into detail of the next slide. <span onclick="goVideo(this)" class="timestamp">46:31</span></p>
+<p>But, then you can even go crazier. <span onclick="goVideo(this)" class="timestamp">46:35</span></p>
+<p>and add an even stronger image prior and generate some very beautiful images indeed So, these are all synthesized images that are trying to maximize the class score or some image in a class. <span onclick="goVideo(this)" class="timestamp">46:38</span></p>
+<p>But, the general idea is that rather than optimizing directly the pixels of the input image, instead they're trying to optimize the FC6 representation of that image instead. <span onclick="goVideo(this)" class="timestamp">46:48</span></p>
+<p>And now they need to use some feature inversion network and I don't want to get into the details here. <span onclick="goVideo(this)" class="timestamp">46:59</span></p>
+<p>You should read the paper, it's actually really cool But, the point is that, when you start adding additional priors towards modeling natural images and you can end generating some quiet realistic images they gave you some sense of what the network is looking for So, that's, that's sort of one cool thing that we can do with this strategy, but this idea of trying to synthesis images by using Gradients on image pixels, is actually super powerful. <span onclick="goVideo(this)" class="timestamp">47:03</span></p>
+<p>And, another really cool thing we can do with this, is this concept of fooling image So, what we can do is pick some arbitrary image, and then try to maximize the, so, say we take it picture of an elephant and then we tell the network that we want to, change the image to maximize the score of Koala bear instead So, then what we were doing is trying to change that image of an elephant to try and instead cause the network to classify as a Koala bear. <span onclick="goVideo(this)" class="timestamp">47:29</span></p>
+<p>And, what you might hope for is that, maybe that elephant was sort of thought more thing into a Koala bear and maybe he would sprout little cute ears or something like that. <span onclick="goVideo(this)" class="timestamp">47:57</span></p>
+<p>But, that's not what happens in practice, which is pretty surprising. <span onclick="goVideo(this)" class="timestamp">48:05</span></p>
+<p>Instead if you take this picture of a elephant and tell them that, tell them that and try to change the elephant image to instead cause it to be classified as a koala bear What you'll find is that, you is that this second image on the right actually is classified as koala bear but it looks the same to us. <span onclick="goVideo(this)" class="timestamp">48:09</span></p>
+<p>So that's pretty fishy and pretty surprising. <span onclick="goVideo(this)" class="timestamp">48:24</span></p>
+<p>So also on the bottom we've taken this picture of a boat. <span onclick="goVideo(this)" class="timestamp">48:28</span></p>
+<p>Schooner is the image in that class and then we told the network to classified as an iPod. <span onclick="goVideo(this)" class="timestamp">48:32</span></p>
+<p>So now the second example looks just, still looks like a boat to us but the network thinks it's an iPod and the difference is in pixels between these two images are basically nothing. <span onclick="goVideo(this)" class="timestamp">48:37</span></p>
+<p>And if you magnify those differences you don't really see any iPod or Koala like features on these differences, they're just kind of like random patterns of noise. <span onclick="goVideo(this)" class="timestamp">48:46</span></p>
+<p>So the question is what's going here? <span onclick="goVideo(this)" class="timestamp">48:54</span></p>
+<p>And like how can this possibly the case? <span onclick="goVideo(this)" class="timestamp">48:56</span></p>
+<p>Well, we'll have a guest lecture from Ian Goodfellow in a week an half two weeks. <span onclick="goVideo(this)" class="timestamp">48:58</span></p>
+<p>And he's going to go in much more detail about this type of phenomenon and that will be really exciting. <span onclick="goVideo(this)" class="timestamp">49:03</span></p>
+<p>But I did want to mention it here because it is on your homework. <span onclick="goVideo(this)" class="timestamp">49:08</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">49:11</span></p>
+<p>Yeah, so that's something, so the question is can we use fooled images as training data and I think, Ian's going to go in much more detail on all of these types of strategies. <span onclick="goVideo(this)" class="timestamp">49:16</span></p>
+<p>Because that's literally, that's really a whole lecture onto itself. <span onclick="goVideo(this)" class="timestamp">49:22</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">49:27</span></p>
+<p>The question is why do we care about any of this stuff? <span onclick="goVideo(this)" class="timestamp">50:00</span></p>
+<p>Basically... <span onclick="goVideo(this)" class="timestamp">50:03</span></p>
+<p>Okay, maybe that was a mischaracterization, I am sorry. <span onclick="goVideo(this)" class="timestamp">50:06</span></p>
+<p>Yeah, the question is what is have in the... <span onclick="goVideo(this)" class="timestamp">50:24</span></p>
+<p>understanding this intermediate neurons how does that help our understanding of the final classification. <span onclick="goVideo(this)" class="timestamp">50:27</span></p>
+<p>So this is actually, this whole field of trying to visualize intermediates is kind of in response to a common criticism of deep learning. <span onclick="goVideo(this)" class="timestamp">50:32</span></p>
+<p>So a common criticism of deep learning is like, you've got this big black box network you trained it on gradient ascent, you get a good number and that's great but we don't trust the network because we don't understand as people why it's making the decisions, that's it's making. <span onclick="goVideo(this)" class="timestamp">50:38</span></p>
+<p>So a lot of these type of visualization techniques were developed to try and address that and try to understand as people why the network are making their various classification, classification decisions a bit more. <span onclick="goVideo(this)" class="timestamp">50:51</span></p>
+<p>Because if you contrast, if you contrast a deep convolutional neural network with other machine running techniques. <span onclick="goVideo(this)" class="timestamp">51:01</span></p>
+<p>Like linear models are much easier to interpret in general because you can look at the weights and kind of understand the interpretation between how much each input feature effect the decision or if you look at something like a random forest or decision tree. <span onclick="goVideo(this)" class="timestamp">51:07</span></p>
+<p>Some other machine learning models end up being a bit more interpretable just by their very nature then this sort of black box convolutional networks. <span onclick="goVideo(this)" class="timestamp">51:19</span></p>
+<p>So a lot of this is sort of in response to that criticism to say that, yes they are these large complex models but they are still doing some interesting and interpretable things under the hood. <span onclick="goVideo(this)" class="timestamp">51:27</span></p>
+<p>They are not just totally going out in randomly classifying things. <span onclick="goVideo(this)" class="timestamp">51:37</span></p>
+<p>They are doing something meaningful So another cool thing we can do with this gradient based optimization of images is this idea of DeepDream. <span onclick="goVideo(this)" class="timestamp">51:40</span></p>
+<p>So this was a really cool blog post that came out from Google a year or two ago. <span onclick="goVideo(this)" class="timestamp">51:50</span></p>
+<p>And the idea is that, this is, so we talked about scientific value, this is almost entirely for fun. <span onclick="goVideo(this)" class="timestamp">51:55</span></p>
+<p>So the point of this exercise is mostly to generate cool images. <span onclick="goVideo(this)" class="timestamp">52:00</span></p>
+<p>And aside, you also get some sense for what features images are looking at. <span onclick="goVideo(this)" class="timestamp">52:04</span></p>
+<p>Or these networks are looking at. <span onclick="goVideo(this)" class="timestamp">52:08</span></p>
+<p>So we can do is, we take our input image we run it through the convolutional network up to some layer and now we back propagate and set the gradient of that, at that layer equal to the activation value. <span onclick="goVideo(this)" class="timestamp">52:10</span></p>
+<p>And now back propagate, back to the image and update the image and repeat, repeat, repeat. <span onclick="goVideo(this)" class="timestamp">52:20</span></p>
+<p>So this has the interpretation of trying to amplify existing features that were detected by the network in this image. <span onclick="goVideo(this)" class="timestamp">52:25</span></p>
+<p>Right?</p>
+<p>Because whatever features existed on that layer now we set the gradient equal to the feature and we just tell the network to amplify whatever features you already saw in that image. <span onclick="goVideo(this)" class="timestamp">52:31</span></p>
+<p>And by the way you can also see this as trying to maximize the L2 norm of the features at that layer of the image. <span onclick="goVideo(this)" class="timestamp">52:40</span></p>
+<p>And it turns... <span onclick="goVideo(this)" class="timestamp">52:46</span></p>
+<p>And when you do this the code ends up looking really simple.</p>
+<p>So your code for many of your homework assignments will probably be about this complex or maybe even a little bit a less so. <span onclick="goVideo(this)" class="timestamp">52:50</span></p>
+<p>So the idea is that... <span onclick="goVideo(this)" class="timestamp">52:55</span></p>
+<p>But there's a couple of tricks here that you'll also see in your assignments. <span onclick="goVideo(this)" class="timestamp">52:57</span></p>
+<p>So one trick is to jitter the image before you compute your gradients. <span onclick="goVideo(this)" class="timestamp">53:00</span></p>
+<p>So rather than running the exact image through the network instead you'll shift the image over by two pixels and kind of wrap the other two pixels over here. <span onclick="goVideo(this)" class="timestamp">53:04</span></p>
+<p>And this is a kind of regularizer to prevent each of these [mumbling] it regularizers a little bit to encourage a little bit of extra special smoothness in the image. <span onclick="goVideo(this)" class="timestamp">53:11</span></p>
+<p>You also see they use L1 normalization of the gradients that's kind of a useful trick sometimes when doing this image generation problems. <span onclick="goVideo(this)" class="timestamp">53:19</span></p>
+<p>You also see them clipping the pixel values once in a while. <span onclick="goVideo(this)" class="timestamp">53:26</span></p>
+<p>So again we talked about images actually should be between zero to 2.55 so this is a kind of projected gradients decent where we project on to the space of actual valid images. <span onclick="goVideo(this)" class="timestamp">53:29</span></p>
+<p>But now when we do all this then we start, we might start with some image of a sky and then we get really cool results like this. <span onclick="goVideo(this)" class="timestamp">53:39</span></p>
+<p>So you can see that now we've taken these tiny features on the sky and they get amplified through this, through this process. <span onclick="goVideo(this)" class="timestamp">53:46</span></p>
+<p>And we can see things like this different mutant animals start to pop up or these kind of spiral shapes pop up. <span onclick="goVideo(this)" class="timestamp">53:52</span></p>
+<p>Different kinds of houses and cars pop up. <span onclick="goVideo(this)" class="timestamp">53:59</span></p>
+<p>So that's all, that's all pretty interesting. <span onclick="goVideo(this)" class="timestamp">54:01</span></p>
+<p>There's a couple patterns in particular that pop up all the time that people have named. <span onclick="goVideo(this)" class="timestamp">54:04</span></p>
+<p>Right, so there's this Admiral dog, that shows up allot. <span onclick="goVideo(this)" class="timestamp">54:08</span></p>
+<p>There's the pig snail, the camel bird this the dog fish. <span onclick="goVideo(this)" class="timestamp">54:12</span></p>
+<p>Right, so these are kind of interesting, but actually this fact that dog show up so much in these visualization, actually does tell us something about the data on which this network was trained. <span onclick="goVideo(this)" class="timestamp">54:16</span></p>
+<p>Right, because this is a network that was trained for image net classification, image that have thousand categories. <span onclick="goVideo(this)" class="timestamp">54:26</span></p>
+<p>But 200 of those categories are dogs. <span onclick="goVideo(this)" class="timestamp">54:30</span></p>
+<p>So, so it's kind of not surprising in a sense that when you do these kind of visualizations then network ends up hallucinating a lot of dog like stuff in the image often morphed with other types of animals. <span onclick="goVideo(this)" class="timestamp">54:32</span></p>
+<p>When you do this other layers of the network you get other types of results. <span onclick="goVideo(this)" class="timestamp">54:44</span></p>
+<p>So here we're taking one of these lower layers in the network, the previous example was relatively high up in the network and now again we have this interpretation that lower layers maybe computing edges and swirls and stuff like that and that's kind of borne out when we running DeepDream at a lower layer. <span onclick="goVideo(this)" class="timestamp">54:47</span></p>
+<p>Or if you run this thing for a long time and maybe add in some multiscale processing you can get some really, really crazy images. <span onclick="goVideo(this)" class="timestamp">55:01</span></p>
+<p>Right, so here they're doing a kind of multiscale processing where they start with a small image run DeepDream on the small image then make it bigger and continue DeepDream on the larger image and kind of repeat with this multiscale processing and then you can get, and then maybe after you complete the final scale then you restart from the beginning and you just go wild on this thing. <span onclick="goVideo(this)" class="timestamp">55:08</span></p>
+<p>And you can get some really crazy images. <span onclick="goVideo(this)" class="timestamp">55:25</span></p>
+<p>So these examples were all from networks trained on image net There's another data set from MIT called MIT Places Data set but instead of 1,000 categories of objects instead it's 200 different types of scenes like bedrooms and kitchens like stuff like that. <span onclick="goVideo(this)" class="timestamp">55:28</span></p>
+<p>And now if we repeat this DeepDream procedure using an network trained at MIT places. <span onclick="goVideo(this)" class="timestamp">55:42</span></p>
+<p>We get some really cool visualization as well. <span onclick="goVideo(this)" class="timestamp">55:48</span></p>
+<p>So now instead of dogs, slugs and admiral dogs and that's kind of stuff, instead we often get these kind of roof shapes of these kind of Japanese style building or these different types of bridges or mountain ranges. <span onclick="goVideo(this)" class="timestamp">55:50</span></p>
+<p>They're like really, really cool beautiful visualizations. <span onclick="goVideo(this)" class="timestamp">56:02</span></p>
+<p>So the code for DeepDream is online, released by Google you can go check it out and make your own beautiful pictures So there's another kind of... <span onclick="goVideo(this)" class="timestamp">56:05</span></p>
+<p>Sorry question? <span onclick="goVideo(this)" class="timestamp">56:13</span></p>
+<p>So the question is, what are taking gradient of? <span onclick="goVideo(this)" class="timestamp">56:24</span></p>
+<p>So like I say, if you, because like one over x squared on the gradient of that is x. <span onclick="goVideo(this)" class="timestamp">56:28</span></p>
+<p>So, if you send back the volume of activation as the gradient, that's equivalent to max, that's equivalent to taking the gradient with respect to the like one over x squared some... <span onclick="goVideo(this)" class="timestamp">56:33</span></p>
+<p>Some of the values. <span onclick="goVideo(this)" class="timestamp">56:42</span></p>
+<p>So it's equivalent to maximizing the norm of that of the features of that layer. <span onclick="goVideo(this)" class="timestamp">56:44</span></p>
+<p>But in practice many implementation you'll see not explicitly compute that instead of send gradient back. <span onclick="goVideo(this)" class="timestamp">56:49</span></p>
+<p>So another kind of useful, another kind of useful thing we can do is this concept of feature inversion. <span onclick="goVideo(this)" class="timestamp">56:56</span></p>
+<p>So this again gives us a sense for what types of, what types of elements of the image are captured at different layers of the network. <span onclick="goVideo(this)" class="timestamp">57:01</span></p>
+<p>So what we're going to do now is we're going to take an image, run that image through network record the feature value for one of those images and now we're going to try to reconstruct that image from its feature representation. <span onclick="goVideo(this)" class="timestamp">57:07</span></p>
+<p>And the question, and now based on the how much, how much like what that reconstructed image looks like that'll give us some sense for what type of information about the image was captured in that feature vector. <span onclick="goVideo(this)" class="timestamp">57:20</span></p>
+<p>So again, we can do this with gradient ascent with some regularizer. <span onclick="goVideo(this)" class="timestamp">57:31</span></p>
+<p>Where now rather than maximizing some score instead we want to minimize the distance between this catch feature vector. <span onclick="goVideo(this)" class="timestamp">57:34</span></p>
+<p>And between the computed features of our generated image. <span onclick="goVideo(this)" class="timestamp">57:41</span></p>
+<p>To try and again synthesize a new image that matches the feature back to that we computed before. <span onclick="goVideo(this)" class="timestamp">57:44</span></p>
+<p>And another kind of regularizer that you frequently see here is the total variation regularizer that you also see on your homework. <span onclick="goVideo(this)" class="timestamp">57:50</span></p>
+<p>So here with the total variation regularizer is panelizing differences between adjacent pixels on both of the left and adjacent in left and right and adjacent top to bottom. <span onclick="goVideo(this)" class="timestamp">57:56</span></p>
+<p>To again try to encourage special smoothness in the generated image. <span onclick="goVideo(this)" class="timestamp">58:05</span></p>
+<p>So now if we do this idea of feature inversion so this visualization here on the left we're showing some original image. <span onclick="goVideo(this)" class="timestamp">58:09</span></p>
+<p>The elephants or the fruits at the left. <span onclick="goVideo(this)" class="timestamp">58:16</span></p>
+<p>And then we run that, we run the image through a VGG-16 network. <span onclick="goVideo(this)" class="timestamp">58:18</span></p>
+<p>Record the features of that network at some layer and then try to synthesize a new image that matches the recorded features of that layer. <span onclick="goVideo(this)" class="timestamp">58:22</span></p>
+<p>And this is, this kind of give us a sense for what how much information is stored in this images. <span onclick="goVideo(this)" class="timestamp">58:30</span></p>
+<p>In these features of different layers. <span onclick="goVideo(this)" class="timestamp">58:35</span></p>
+<p>So for example if we try to reconstruct the image based on the relu2_2 features from VGC's, from VGG-16. <span onclick="goVideo(this)" class="timestamp">58:37</span></p>
+<p>We see that the image gets almost perfectly reconstructed. <span onclick="goVideo(this)" class="timestamp">58:43</span></p>
+<p>Which means that we're not really throwing away much information about the raw pixel values at that layer. <span onclick="goVideo(this)" class="timestamp">58:46</span></p>
+<p>But as we move up into the deeper parts of the network and try to reconstruct from relu4_3, relu5_1. <span onclick="goVideo(this)" class="timestamp">58:52</span></p>
+<p>We see that our reconstructed image now, we've kind of kept the general space, the general spatial structure of the image. <span onclick="goVideo(this)" class="timestamp">58:58</span></p>
+<p>You can still tell that, that it's a elephant or a banana or a, or an apple. <span onclick="goVideo(this)" class="timestamp">59:05</span></p>
+<p>But a lot of the low level details aren't exactly what the pixel values were and exactly what the colors were, exactly what the textures were. <span onclick="goVideo(this)" class="timestamp">59:09</span></p>
+<p>These are kind of low level details are kind of lost at these higher layers of this network. <span onclick="goVideo(this)" class="timestamp">59:16</span></p>
+<p>So that gives us some sense that maybe as we move up through the flairs of the network it's kind of throwing away this low level information about the exact pixels of the image and instead is maybe trying to keep around a little bit more semantic information, it's a little bit invariant for small changes in color and texture and things like that. <span onclick="goVideo(this)" class="timestamp">59:20</span></p>
+<p>So we're building towards a style transfer here which is really cool. <span onclick="goVideo(this)" class="timestamp">59:38</span></p>
+<p>So in addition to understand style transfer, in addition to feature inversion. <span onclick="goVideo(this)" class="timestamp">59:42</span></p>
+<p>We also need to talk about a related problem called texture synthesis. <span onclick="goVideo(this)" class="timestamp">59:47</span></p>
+<p>So in texture synthesis, this is kind of an old problem in computer graphics. <span onclick="goVideo(this)" class="timestamp">59:51</span></p>
+<p>Here the idea is that we're given some input patch of texture. <span onclick="goVideo(this)" class="timestamp">59:55</span></p>
+<p>Something like these little scales here and now we want to build some model and then generate a larger piece of that same texture. <span onclick="goVideo(this)" class="timestamp">59:58</span></p>
+<p>So for example, we might here want to generate a large image containing many scales that kind of look like input. <span onclick="goVideo(this)" class="timestamp">60:05</span></p>
+<p>And this is again a pretty old problem in computer graphics. <span onclick="goVideo(this)" class="timestamp">60:12</span></p>
+<p>There are nearest neighbor approaches to textual synthesis that work pretty well. <span onclick="goVideo(this)" class="timestamp">60:15</span></p>
+<p>So, there's no neural networks here. <span onclick="goVideo(this)" class="timestamp">60:19</span></p>
+<p>Instead, this kind of a simple algorithm where we march through the generated image one pixel at a time in scan line order. <span onclick="goVideo(this)" class="timestamp">60:21</span></p>
+<p>And then copy... <span onclick="goVideo(this)" class="timestamp">60:27</span></p>
+<p>And then look at a neighborhood around the current pixel based on the pixels that we've already generated and now compute a nearest neighbor of that neighborhood in the patches of the input image and then copy over one pixel from the input image. <span onclick="goVideo(this)" class="timestamp">60:28</span></p>
+<p>So, maybe you don't need to understand the details here just the idea is that there's a lot classical algorithms for texture synthesis, it's a pretty old problem but you can do this without neural networks basically. <span onclick="goVideo(this)" class="timestamp">60:41</span></p>
+<p>And when you run this kind of this kind of classical texture synthesis algorithm it actually works reasonably well for simple textures. <span onclick="goVideo(this)" class="timestamp">60:52</span></p>
+<p>But as we move to more complex textures these kinds of simple methods of maybe copying pixels from the input patch directly tend not to work so well. <span onclick="goVideo(this)" class="timestamp">60:59</span></p>
+<p>So, in 2015, there was a really cool paper that tried to apply neural network features to this problem of texture synthesis. <span onclick="goVideo(this)" class="timestamp">61:08</span></p>
+<p>And ended up framing it as kind of a gradient ascent procedure, kind of similar to the feature map, the various feature matching objectives that we've seen already. <span onclick="goVideo(this)" class="timestamp">61:16</span></p>
+<p>So, in order to perform neural texture synthesis they use this concept of a gram matrix. <span onclick="goVideo(this)" class="timestamp">61:24</span></p>
+<p>So, what we're going to do, is we're going to take our input texture and in this case some pictures of rocks and then take that input texture and pass it through some convolutional neural network and pull out convolutional features at some layer of the network. <span onclick="goVideo(this)" class="timestamp">61:30</span></p>
+<p>So, maybe then this convolutional feature volume that we've talked about, might be H by W by C or sorry, C by H by W at that layer of the network. <span onclick="goVideo(this)" class="timestamp">61:44</span></p>
+<p>So, you can think of this as an H by W spacial grid. <span onclick="goVideo(this)" class="timestamp">61:53</span></p>
+<p>And at each point of the grid, we have this C dimensional feature vector describing the rough appearance of that image at that point. <span onclick="goVideo(this)" class="timestamp">61:56</span></p>
+<p>And now, we're going to use this activation map to compute a descriptor of the texture of this input image. <span onclick="goVideo(this)" class="timestamp">62:04</span></p>
+<p>So, what we're going to do is take, pick out two of these different feature columns in the input volume. <span onclick="goVideo(this)" class="timestamp">62:10</span></p>
+<p>Each of these feature columns will be a C dimensional vector. <span onclick="goVideo(this)" class="timestamp">62:15</span></p>
+<p>And now take the outer product between those two vectors to give us a C by C matrix. <span onclick="goVideo(this)" class="timestamp">62:18</span></p>
+<p>This C by C matrix now tells us something about the co-occurrence of the different features at those two points in the image. <span onclick="goVideo(this)" class="timestamp">62:23</span></p>
+<p>Right, so, if an element, if like element IJ in the C by C matrix is large that means both elements I and J of those two input vectors were large and something like that. <span onclick="goVideo(this)" class="timestamp">62:30</span></p>
+<p>So, this somehow captures some second order statistics about which features, in that feature map tend to activate to together at different spacial volumes... <span onclick="goVideo(this)" class="timestamp">62:40</span></p>
+<p>At different spacial positions. <span onclick="goVideo(this)" class="timestamp">62:49</span></p>
+<p>And now we're going to repeat this procedure using all different pairs of feature vectors from all different points in this H by W grid. <span onclick="goVideo(this)" class="timestamp">62:51</span></p>
+<p>Average them all out, and that gives us our C by C gram matrix. <span onclick="goVideo(this)" class="timestamp">62:58</span></p>
+<p>And this is then used a descriptor to describe kind of the texture of that input image. <span onclick="goVideo(this)" class="timestamp">63:01</span></p>
+<p>So, what's interesting about this gram matrix is that it has now thrown away all spacial information that was in this feature volume. <span onclick="goVideo(this)" class="timestamp">63:06</span></p>
+<p>Because we've averaged over all pairs of feature vectors at every point in the image. <span onclick="goVideo(this)" class="timestamp">63:13</span></p>
+<p>Instead, it's just capturing the second order co-occurrence statistics between features. <span onclick="goVideo(this)" class="timestamp">63:17</span></p>
+<p>And this ends up being a nice descriptor for texture. <span onclick="goVideo(this)" class="timestamp">63:21</span></p>
+<p>And by the way, this is really efficient to compute. <span onclick="goVideo(this)" class="timestamp">63:25</span></p>
+<p>So, if you have a C by H by W three dimensional tensure you can just reshape it to see times H by W and take that times its own transpose and compute this all in one shot so it's super efficient. <span onclick="goVideo(this)" class="timestamp">63:27</span></p>
+<p>But you might be wondering why you don't use an actual covariance matrix or something like that instead of this funny gram matrix and the answer is that using covariance... <span onclick="goVideo(this)" class="timestamp">63:39</span></p>
+<p>Using true covariance matrices also works but it's a little bit more expensive to compute. <span onclick="goVideo(this)" class="timestamp">63:47</span></p>
+<p>So, in practice a lot of people just use this gram matrix descriptor. <span onclick="goVideo(this)" class="timestamp">63:51</span></p>
+<p>So then... <span onclick="goVideo(this)" class="timestamp">63:55</span></p>
+<p>Then there's this...</p>
+<p>Now once we have this sort of neural descriptor of texture then we use a similar type of gradient ascent procedure to synthesize a new image that matches the texture of the original image. <span onclick="goVideo(this)" class="timestamp">63:56</span></p>
+<p>So, now this looks kind of like the feature reconstruction that we saw a few slides ago. <span onclick="goVideo(this)" class="timestamp">64:06</span></p>
+<p>But instead, I'm trying to reconstruct the whole feature map from the input image. <span onclick="goVideo(this)" class="timestamp">64:10</span></p>
+<p>Instead, we're just going to try and reconstruct this gram matrix texture descriptor of the input image instead. <span onclick="goVideo(this)" class="timestamp">64:15</span></p>
+<p>So, in practice what this looks like is that well... <span onclick="goVideo(this)" class="timestamp">64:20</span></p>
+<p>You'll download some pretrained model, like in feature inversion. <span onclick="goVideo(this)" class="timestamp">64:23</span></p>
+<p>Often, people will use the VGG networks for this. <span onclick="goVideo(this)" class="timestamp">64:25</span></p>
+<p>You'll feed your... <span onclick="goVideo(this)" class="timestamp">64:28</span></p>
+<p>You'll take your texture image, feed it through the VGG network, compute the gram matrix and many different layers of this network.</p>
+<p>Then you'll initialize your new image from some random initialization and then it looks like gradient ascent again. <span onclick="goVideo(this)" class="timestamp">64:38</span></p>
+<p>Just like for these other methods that we've seen. <span onclick="goVideo(this)" class="timestamp">64:45</span></p>
+<p>So, you take that image, pass it through the same VGG network, Compute the gram matrix at various layers and now compute loss as the L2 norm between the gram matrices of your input texture and your generated image. <span onclick="goVideo(this)" class="timestamp">64:47</span></p>
+<p>And then you back prop, and compute pixel... <span onclick="goVideo(this)" class="timestamp">65:00</span></p>
+<p>A gradient of the pixels on your generated image. <span onclick="goVideo(this)" class="timestamp">65:03</span></p>
+<p>And then make a gradient ascent step to update the pixels of the image a little bit. <span onclick="goVideo(this)" class="timestamp">65:06</span></p>
+<p>And now, repeat this process many times, go forward, compute your gram matrices, compute your losses, back prop.. <span onclick="goVideo(this)" class="timestamp">65:09</span></p>
+<p>Gradient on the image and repeat. <span onclick="goVideo(this)" class="timestamp">65:14</span></p>
+<p>And once you do this, eventually you'll end up generating a texture that matches your input texture quite nicely. <span onclick="goVideo(this)" class="timestamp">65:17</span></p>
+<p>So, this was all from Nip's 2015 paper by a group in Germany. <span onclick="goVideo(this)" class="timestamp">65:22</span></p>
+<p>And they had some really cool results for texture synthesis. <span onclick="goVideo(this)" class="timestamp">65:27</span></p>
+<p>So, here on the top, we're showing four different input textures. <span onclick="goVideo(this)" class="timestamp">65:30</span></p>
+<p>And now, on the bottom, we're showing doing this texture synthesis approach by gram matrix matching. <span onclick="goVideo(this)" class="timestamp">65:33</span></p>
+<p>Using, by computing the gram matrix at different layers at this pretrained convolutional network. <span onclick="goVideo(this)" class="timestamp">65:41</span></p>
+<p>So, you can see that, if we use these very low layers in the convolutional network then we kind of match the general... <span onclick="goVideo(this)" class="timestamp">65:45</span></p>
+<p>We generally get splotches of the right colors but the overall spacial structure doesn't get preserved so much. <span onclick="goVideo(this)" class="timestamp">65:51</span></p>
+<p>And now, as we move to large down further in the image and you compute these gram matrices at higher layers you see that they tend to reconstruct larger patterns from the input image. <span onclick="goVideo(this)" class="timestamp">65:56</span></p>
+<p>For example, these whole rocks or these whole cranberries. <span onclick="goVideo(this)" class="timestamp">66:06</span></p>
+<p>And now, this works pretty well that now we can synthesize these new images that kind of match the general spacial statistics of your inputs. <span onclick="goVideo(this)" class="timestamp">66:10</span></p>
+<p>But they are quite different pixel wise from the actual input itself. <span onclick="goVideo(this)" class="timestamp">66:17</span></p>
+<p>Question? <span onclick="goVideo(this)" class="timestamp">66:21</span></p>
+<p>So, the question is, where do we compute the loss? <span onclick="goVideo(this)" class="timestamp">66:28</span></p>
+<p>And in practice, we want to get good results typically people will compute gram matrices at many different layers and then the final loss will be a sum of all those potentially a weighted sum. <span onclick="goVideo(this)" class="timestamp">66:30</span></p>
+<p>But I think for this visualization, to try to pin point the effect of the different layers I think these were doing reconstruction from just one layer. <span onclick="goVideo(this)" class="timestamp">66:40</span></p>
+<p>So, now something really... <span onclick="goVideo(this)" class="timestamp">66:47</span></p>
+<p>Then, then they had a really brilliant idea kind of after this paper which is, what if we do this texture synthesis approach but instead of using an image like rocks or cranberries what if we set it equal to a piece of artwork. <span onclick="goVideo(this)" class="timestamp">66:49</span></p>
+<p>So then, for example, if you... <span onclick="goVideo(this)" class="timestamp">67:01</span></p>
+<p>If you do the same texture synthesis algorithm by maximizing gram matrices, but instead of... <span onclick="goVideo(this)" class="timestamp">67:03</span></p>
+<p>But now we take, for example, Vincent Van Gogh's Starry night or the Muse by Picasso as our texture... <span onclick="goVideo(this)" class="timestamp">67:09</span></p>
+<p>As our input texture, and then run this same texture synthesis algorithm. <span onclick="goVideo(this)" class="timestamp">67:14</span></p>
+<p>Then we can see our generated images tend to reconstruct interesting pieces from those pieces of artwork. <span onclick="goVideo(this)" class="timestamp">67:19</span></p>
+<p>And now, something really interesting happens when you combine this idea of texture synthesis by gram matrix matching with feature inversion by feature matching. <span onclick="goVideo(this)" class="timestamp">67:25</span></p>
+<p>And then this brings us to this really cool algorithm called style transfer. <span onclick="goVideo(this)" class="timestamp">67:34</span></p>
+<p>So, in style transfer, we're going to take two images as input. <span onclick="goVideo(this)" class="timestamp">67:38</span></p>
+<p>One, we're going to take a content image that will guide like what type of thing we want. <span onclick="goVideo(this)" class="timestamp">67:42</span></p>
+<p>What we generally want our output to look like. <span onclick="goVideo(this)" class="timestamp">67:47</span></p>
+<p>Also, a style image that will tell us what is the general texture or style that we want our generated image to have and then we will jointly do feature recon... <span onclick="goVideo(this)" class="timestamp">67:49</span></p>
+<p>We will generate a new image by minimizing the feature reconstruction loss of the content image and the gram matrix loss of the style image. <span onclick="goVideo(this)" class="timestamp">67:57</span></p>
+<p>And when we do these two things we a get a really cool image that kind of renders the content image kind of in the artistic style of the style image. <span onclick="goVideo(this)" class="timestamp">68:05</span></p>
+<p>And now this is really cool. <span onclick="goVideo(this)" class="timestamp">68:14</span></p>
+<p>And you can get these really beautiful figures. <span onclick="goVideo(this)" class="timestamp">68:16</span></p>
+<p>So again, what this kind of looks like is that you'll take your style image and your content image pass them into your network to compute your gram matrices and your features. <span onclick="goVideo(this)" class="timestamp">68:18</span></p>
+<p>Now, you'll initialize your output image with some random noise. <span onclick="goVideo(this)" class="timestamp">68:26</span></p>
+<p>Go forward, compute your losses go backward, compute your gradients on the image and repeat this process over and over doing gradient ascent on the pixels of your generated image. <span onclick="goVideo(this)" class="timestamp">68:29</span></p>
+<p>And after a few hundred iterations, generally you'll get a beautiful image. <span onclick="goVideo(this)" class="timestamp">68:38</span></p>
+<p>So, I have implementation of this online on my Gethub, that a lot of people are using. <span onclick="goVideo(this)" class="timestamp">68:43</span></p>
+<p>And it's really cool. <span onclick="goVideo(this)" class="timestamp">68:47</span></p>
+<p>So, you can, this is kind of... <span onclick="goVideo(this)" class="timestamp">68:48</span></p>
+<p>Gives you a lot more control over the generated image as compared to DeepDream. <span onclick="goVideo(this)" class="timestamp">68:50</span></p>
+<p>Right, so in DeepDream, you don't have a lot of control about exactly what types of things are going to happen coming out at the end. <span onclick="goVideo(this)" class="timestamp">68:54</span></p>
+<p>You just kind of pick different layers of the networks maybe set different numbers of iterations and then dog slugs pop up everywhere. <span onclick="goVideo(this)" class="timestamp">69:00</span></p>
+<p>But with style transfer, you get a lot more fine grain control over what you want the result to look like. <span onclick="goVideo(this)" class="timestamp">69:06</span></p>
+<p>Right, by now, picking different style images with the same content image you can generate whole different types of results which is really cool. <span onclick="goVideo(this)" class="timestamp">69:11</span></p>
+<p>Also, you can play around with the hyper parameters here. <span onclick="goVideo(this)" class="timestamp">69:19</span></p>
+<p>Right, because we're doing a joint reconstruct... <span onclick="goVideo(this)" class="timestamp">69:21</span></p>
+<p>We're minimizing this feature reconstruction loss of the content image. <span onclick="goVideo(this)" class="timestamp">69:23</span></p>
+<p>And this gram matrix reconstruction loss of the style image. <span onclick="goVideo(this)" class="timestamp">69:27</span></p>
+<p>If you trade off the constant, the waiting between those two terms and the loss. <span onclick="goVideo(this)" class="timestamp">69:30</span></p>
+<p>Then you can get control about how much we want to match the content versus how much we want to match the style. <span onclick="goVideo(this)" class="timestamp">69:34</span></p>
+<p>There's a lot of other hyper parameters you can play with. <span onclick="goVideo(this)" class="timestamp">69:39</span></p>
+<p>For example, if you resize the style image before you compute the gram matrix that can give you some control over what the scale of features are that you want to reconstruct from the style image. <span onclick="goVideo(this)" class="timestamp">69:41</span></p>
+<p>So, you can see that here, we've done this same reconstruction the only difference is how big was the style image before we computed the gram matrix. <span onclick="goVideo(this)" class="timestamp">69:52</span></p>
+<p>And this gives you another axis over which you can control these things. <span onclick="goVideo(this)" class="timestamp">69:58</span></p>
+<p>You can also actually do style transfer with multiple style images if you just match sort of multiple gram matrices at the same time. <span onclick="goVideo(this)" class="timestamp">70:04</span></p>
+<p>And that's kind of a cool result. <span onclick="goVideo(this)" class="timestamp">70:11</span></p>
+<p>We also saw this multi-scale process... <span onclick="goVideo(this)" class="timestamp">70:13</span></p>
+<p>So, another cool thing you can do. <span onclick="goVideo(this)" class="timestamp">70:15</span></p>
+<p>We talked about this multi-scale processing for DeepDream and saw how multi scale processing in DeepDream can give you some really cool resolution results. <span onclick="goVideo(this)" class="timestamp">70:17</span></p>
+<p>And you can do a similar type of multi-scale processing in style transfer as well. <span onclick="goVideo(this)" class="timestamp">70:25</span></p>
+<p>So, then we can compute images like this. <span onclick="goVideo(this)" class="timestamp">70:29</span></p>
+<p>That a super high resolution, this is I think a 4k image of our favorite school, like rendered in the style of Starry night. <span onclick="goVideo(this)" class="timestamp">70:32</span></p>
+<p>But this is actually super expensive to compute. <span onclick="goVideo(this)" class="timestamp">70:40</span></p>
+<p>I think this one took four GPU's. <span onclick="goVideo(this)" class="timestamp">70:42</span></p>
+<p>So, a little expensive. <span onclick="goVideo(this)" class="timestamp">70:44</span></p>
+<p>We can also other style, other style images. <span onclick="goVideo(this)" class="timestamp">70:47</span></p>
+<p>And get some really cool results from the same content image. <span onclick="goVideo(this)" class="timestamp">70:49</span></p>
+<p>Again, at high resolution. <span onclick="goVideo(this)" class="timestamp">70:51</span></p>
+<p>Another fun thing you can do is you know, you can actually do joint style transfer and DeepDream at the same time. <span onclick="goVideo(this)" class="timestamp">70:53</span></p>
+<p>So, now we'll have three losses, the content loss the style loss and this... <span onclick="goVideo(this)" class="timestamp">71:01</span></p>
+<p>And this DeepDream loss that tries to maximize the norm. <span onclick="goVideo(this)" class="timestamp">71:05</span></p>
+<p>And get something like this. <span onclick="goVideo(this)" class="timestamp">71:09</span></p>
+<p>So, now it's Van Gogh with the dog slug's coming out everywhere. <span onclick="goVideo(this)" class="timestamp">71:11</span></p>
+<p>[laughing] So, that's really cool. <span onclick="goVideo(this)" class="timestamp">71:14</span></p>
+<p>But there's kind of a problem with this style transfer for algorithms which is that they are pretty slow. <span onclick="goVideo(this)" class="timestamp">71:18</span></p>
+<p>Right, you need to produce... <span onclick="goVideo(this)" class="timestamp">71:23</span></p>
+<p>You need to compute a lot of forward and backward passes through your pretrained network in order to complete these images. <span onclick="goVideo(this)" class="timestamp">71:24</span></p>
+<p>And especially for these high resolution results that we saw in the previous slide. <span onclick="goVideo(this)" class="timestamp">71:30</span></p>
+<p>Each forward and backward pass of a 4k image is going to take a lot of compute and a lot of memory. <span onclick="goVideo(this)" class="timestamp">71:33</span></p>
+<p>And if you need to do several hundred of those iterations generating these images could take many, like tons of minutes even on a powerful GPU. <span onclick="goVideo(this)" class="timestamp">71:38</span></p>
+<p>So, it's really not so practical to apply these things in practice. <span onclick="goVideo(this)" class="timestamp">71:46</span></p>
+<p>The solution is to now, train another neural network to do the style transfer for us. <span onclick="goVideo(this)" class="timestamp">71:50</span></p>
+<p>So, I had a paper about this last year and the idea is that we're going to fix some style that we care about at the beginning. <span onclick="goVideo(this)" class="timestamp">71:54</span></p>
+<p>In this case, Starry night. <span onclick="goVideo(this)" class="timestamp">72:01</span></p>
+<p>And now rather than running a separate optimization procedure for each image that we want to synthesize instead we're going to train a single feed forward network that can input the content image and then directly output the stylized result. <span onclick="goVideo(this)" class="timestamp">72:03</span></p>
+<p>And now the way that we train this network is that we compute the same content and style losses during training of our feed forward network and use that same gradient to update the weights of the feed forward network. <span onclick="goVideo(this)" class="timestamp">72:15</span></p>
+<p>And now this thing takes maybe a few hours to train but once it's trained, then in order to produce stylized images you just need to do a single forward pass through the trained network. <span onclick="goVideo(this)" class="timestamp">72:26</span></p>
+<p>So, I have a code for this online and you can see that it ends up looking about... <span onclick="goVideo(this)" class="timestamp">72:36</span></p>
+<p>Relatively comparable quality in some cases to this very slow optimization base method but now it runs in real time it's about a thousand times faster. <span onclick="goVideo(this)" class="timestamp">72:40</span></p>
+<p>So, here you can see, this is like a demo of it running live off my webcam. <span onclick="goVideo(this)" class="timestamp">72:49</span></p>
+<p>So, this is not running live right now obviously, but if you have a big GPU you can easily run four different styles in real time all simultaneously because it's so efficient. <span onclick="goVideo(this)" class="timestamp">72:54</span></p>
+<p>There was... <span onclick="goVideo(this)" class="timestamp">73:05</span></p>
+<p>There was another group from Russia that had a very similar out...</p>
+<p>That had a very similar paper concurrently and their results are about as good. <span onclick="goVideo(this)" class="timestamp">73:08</span></p>
+<p>They also had this kind of tweek on the algorithm. <span onclick="goVideo(this)" class="timestamp">73:12</span></p>
+<p>So, this feed forward network that we're training ends up looking a lot like these... <span onclick="goVideo(this)" class="timestamp">73:15</span></p>
+<p>These segmentation models that we saw. <span onclick="goVideo(this)" class="timestamp">73:20</span></p>
+<p>So, these segmentation networks, for semantic segmentation we're doing down sampling and then many, and then many layers then some up sampling [mumbling] With transposed convulsion in order to down sample an up sample to be more efficient. <span onclick="goVideo(this)" class="timestamp">73:22</span></p>
+<p>The only difference is that this final layer produces a three channel output for the RGB of that final image. <span onclick="goVideo(this)" class="timestamp">73:37</span></p>
+<p>And inside this network, we have batch normalization in the various layers. <span onclick="goVideo(this)" class="timestamp">73:45</span></p>
+<p>But in this paper, they introduce... <span onclick="goVideo(this)" class="timestamp">73:48</span></p>
+<p>They swap out the batch normalization for something else called instance normalization tends to give you much better results. <span onclick="goVideo(this)" class="timestamp">73:50</span></p>
+<p>So, one drawback of these types of methods is that we're now training one new style transfer network... <span onclick="goVideo(this)" class="timestamp">73:56</span></p>
+<p>For every... <span onclick="goVideo(this)" class="timestamp">74:02</span></p>
+<p>For style that we want to apply.</p>
+<p>So that could be expensive if now you need to keep a lot of different trained networks around. <span onclick="goVideo(this)" class="timestamp">74:05</span></p>
+<p>So, there was a paper from Google that just came... <span onclick="goVideo(this)" class="timestamp">74:10</span></p>
+<p>Pretty recently that addressed this by using one feed forward trained network to apply many different styles to the input image. <span onclick="goVideo(this)" class="timestamp">74:13</span></p>
+<p>So now, they can train one network to apply many different styles at test time using one trained network. <span onclick="goVideo(this)" class="timestamp">74:21</span></p>
+<p>So, here's it's going to take the content images input as well as the identity of the style you want to apply and then this is using one network to apply many different types of styles. <span onclick="goVideo(this)" class="timestamp">74:28</span></p>
+<p>And again, runs in real time. <span onclick="goVideo(this)" class="timestamp">74:36</span></p>
+<p>That same algorithm can also do this kind of style blending in real time with one trained network. <span onclick="goVideo(this)" class="timestamp">74:39</span></p>
+<p>So now, once you trained this network on these four different styles you can actually specify a blend of these styles to be applied at test time which is really cool. <span onclick="goVideo(this)" class="timestamp">74:44</span></p>
+<p>So, these kinds of real time style transfer methods are on various apps and you can see these out in practice a lot now these days. <span onclick="goVideo(this)" class="timestamp">74:52</span></p>
+<p>So, kind of the summary of what we've seen today is that we've talked about many different methods for understanding CNN representations. <span onclick="goVideo(this)" class="timestamp">75:01</span></p>
+<p>We've talked about some of these activation based methods like nearest neighbor, dimensionality reduction, maximal patches, occlusion images to try to understand based on the activation values of what the features are looking for. <span onclick="goVideo(this)" class="timestamp">75:08</span></p>
+<p>We also talked about a bunch of gradient based methods where you can use gradients to synthesize new images to understand your features such as saliency maps class visualizations, fooling images, feature inversion. <span onclick="goVideo(this)" class="timestamp">75:18</span></p>
+<p>And we also had fun by seeing how a lot of these similar ideas can be applied to things like Style Transfer and DeepDream to generate really cool images. <span onclick="goVideo(this)" class="timestamp">75:30</span></p>
+<p>So, next time, we'll talk about unsupervised learning Autoencoders, Variational Autoencoders and generative adversarial networks so that should be a fun lecture. <span onclick="goVideo(this)" class="timestamp">75:37</span></p>
+		</div>
+	</body>
+</html>

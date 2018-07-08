@@ -1,0 +1,649 @@
+Lecture 16 - Adversarial Examples and Adversarial Training
+
+Okay, sounds like it is. 00:08
+I'll be telling you about adversarial examples and adversarial training today. 00:10
+Thank you. 00:15
+As an overview, I will start off by telling you what adversarial examples are, and then I'll explain why they happen, why it's possible for them to exist. 00:18
+I'll talk a little bit about how adversarial examples pose real world security threats, that they can actually be used to compromise systems built on machine learning. 00:28
+I'll tell you what the defenses are so far, but mostly defenses are an open research problem that I hope some of you will move on to tackle. 00:38
+And then finally I'll tell you how to use adversarial examples to improve other machine learning algorithms even if you want to build a machine learning algorithm that won't face a real world adversary. 00:47
+Looking at the big picture and the context for this lecture, I think most of you are probably here because you've heard how incredibly powerful and successful machine learning is, that very many different tasks that could not be solved with software before are now solvable thanks to deep learning and convolutional networks and gradient descent. 01:00
+All of these technologies that are working really well. 01:23
+Until just a few years ago, these technologies didn't really work. 01:27
+In about 2013, we started to see that deep learning achieved human level performance at a lot of different tasks. 01:30
+We saw that convolutional nets could recognize objects and images and score about the same as people in those benchmarks, with the caveat that part of the reason that algorithms score as well as people is that people can't tell Alaskan Huskies from Siberian Huskies very well, but modulo the strangeness of the benchmarks deep learning caught up to about human level performance for object recognition in about 2013. 01:39
+That same year, we also saw that object recognition applied to human faces caught up to about human level. 02:05
+That suddenly we had computers that could recognize faces about as well as you or I could recognize faces of strangers. 02:12
+You can recognize the faces of your friends and family better than a computer, but when you're dealing with people that you haven't had a lot of experience with the computer caught up to us in about 2013. 02:21
+We also saw that computers caught up to humans for reading type written fonts in photos in about 2013. 02:34
+It even got the point that we could no longer use CAPTCHAs to tell whether a user of a webpage is human or not because the convolutional network is better at reading obfuscated text than a human is. 02:42
+So with this context today of deep learning working really well especially for computer vision it's a little bit unusual to think about the computer making a mistake. 02:56
+Before about 2013, nobody was ever surprised if the computer made a mistake. 03:07
+That was the rule not the exception, and so today's topic which is all about unusual mistakes that deep learning algorithms make this topic wasn't really a serious avenue of study until the algorithms started to work well most of the time, and now people study the way that they break now that that's actually the exception rather than the rule. 03:12
+An adversarial example is an example that has been carefully computed to be misclassified. 03:36
+In a lot of cases we're able to make the new image indistinguishable to a human observer from the original image. 03:43
+Here, I show you one where we start with a panda. 03:50
+On the left this is a panda that has not been modified in any way, and the convolutional network trained on the image in that dataset is able to recognize it as being a panda. 03:52
+One interesting thing is that the model doesn't have a whole lot of confidence in that decision. 04:03
+It assigns about 60% probability to this image being a panda. 04:08
+If we then compute exactly the way that we could modify the image to cause the convolutional network to make a mistake we find that the optimal direction to move all the pixels is given by this image in the middle. 04:13
+To a human it looks a lot like noise. 04:27
+It's not actually noise. 04:29
+It's carefully computed as a function of the parameters of the network. 04:31
+There's actually a lot of structure there. 04:34
+If we multiply that image of the structured attack by a very small coefficient and add it to the original panda we get an image that a human can't tell from the original panda. 04:36
+In fact, on this slide there is no difference between the panda on the left and the panda on the right. 04:49
+When we present the image to convolutional network we use 32-bit floating point values. 04:56
+The monitor here can only display eight bits of color resolution, and we have made a change that's just barely too small to affect the smallest of those eight bits, but it effects the other 24 of the 32-bit floating point representation, and that little tiny change is enough to fool the convolutional network into recognizing this image of a panda as being a gibbon. 05:01
+Another interesting thing is that it doesn't just change the class. 05:26
+It's not that we just barely found the decision boundary and just barely stepped across it. 05:29
+The convolutional network actually has much more confidence in its incorrect prediction, that the image on the right is a gibbon, than it had for the original being a panda. 05:34
+On the right, it believes that the image is a gibbon with 99.9% probability, so before it thought that there was about 1/3 chance that it was something other than a panda, and now it's about as certain as it can possibly be that it's a gibbon. 05:45
+As a little bit of history, people have studied ways of computing attacks to fool different machine learning models since at least about 2004, and maybe earlier. 06:02
+For a long time this was done in the context of fooling spam detectors. 06:13
+In about 2013, Battista Biggio found that you could fool neural networks in this way, and around the same time my colleague, Christian Szegedy, found that you could make this kind of attack against deep neural networks just by using an optimization algorithm to search on the input of the image. 06:17
+A lot of what I'll be telling you about today is my own follow-up work on this topic, but I've spent a lot of my career over the past few years understanding why these attacks are possible and why it's so easy to fool these convolutional networks. 06:36
+When my colleague, Christian, first discovered this phenomenon independently from Battista Biggio but around the same time, he found that it was actually a result of a visualization he was trying to make. 06:52
+He wasn't studying security. 07:08
+He wasn't studying how to fool a neural network. 07:10
+Instead, he had a convolutional network that could recognize objects very well, and he wants to understand how it worked, so he thought that maybe he could take an image of a scene, for example a picture of a ship, and he could gradually transform that image into something that the network would recognize as being an airplane. 07:12
+Over the course of that transformation, he could see how the features of the input change. 07:33
+You might expect that maybe the background 167 :34,360 --> :37,692 would turn blue to look like the sky behind an airplane, or you might expect that the ship would grow wings to look more like an airplane. 07:38
+You could conclude from that that the convolution uses the blue sky or uses the wings to recognize airplanes. 07:48
+That's actually not really what happened at all. 07:56
+Each of these panels here shows an animation that you read left to right, top to bottom. 07:59
+Each panel is another step of gradient ascent on the log probability that the input is an airplane according to a convolutional net model, and then we follow the gradient on the input to the image. 08:03
+You're probably used to following the gradient on the parameters of a model. 08:18
+You can use the back propagation algorithm to compute the gradient on the input image using exactly the same procedure that you would use to compute the gradient on the parameters. 08:22
+In this animation of the ship in the upper left, we see five panels that all look basically the same. 08:31
+Gradient descent doesn't seem to have moved the image at all, but by the last panel the network is completely confident that this is an airplane. 08:37
+When you first code up this kind of experiment, especially if you don't know what's going to happen, it feels a little bit like you have a bug in your script and you're just displaying the same image over and over again. 08:45
+The first time I did it, I couldn't believe it was happening, and I had to open up the images in NumPy, and take the difference of them, and make sure that there was actually a non-zero difference in there, but there is. 08:54
+I show several different animations here of a ship, a car, a cat, and a truck. 09:07
+The only one where I actually see any change at all is the image of the cat. 09:13
+The color of the cat's face changes a little bit, and maybe it becomes a little bit more like the color of a metal airplane. 09:18
+Other than that, I don't see any changes in any of these animations, and I don't see anything very suggestive of an airplane. 09:25
+So gradient descent, rather than turning the input into an example of an airplane, has found an image that fools the network into thinking that the input is an airplane. 09:33
+And if we were malicious attackers we didn't even have to work very hard to figure out how to fool the network. 09:45
+We just asked the network to give us an image of an airplane, and it gave us something that fools it into thinking that the input is an airplane. 09:51
+When Christian first published this work, a lot of articles came out with titles like, The Flaw Looking At Every Deep Neural Network, or Deep Learning has Deep Flaws. 10:00
+It's important to remember that these vulnerabilities apply to essentially every machine learning algorithm that we've studied so far. 10:10
+Some of them like RBF networks and partisan density estimators are able to resist this effect somewhat, but even very simple machine learning algorithms are highly vulnerable to adversarial examples. 10:18
+In this image, I show an animation of what happens when we attack a linear model, so it's not a deep algorithm at all. 10:32
+It's just a shallow softmax model. 10:38
+You multiply by a matrix, you add a vector of bias terms, you apply the softmax function, and you've got your probability distribution over the 10 MNIST classes. 10:41
+At the upper left, I start with an image of a nine, and then as we move left to right, top to bottom, I gradually transform it to be a zero. 10:51
+Where I've drawn the yellow box, the model assigns high probability to it being a zero. 11:00
+I forget exactly what my threshold was for high probability, but I think it was around 0.9 or so. 11:05
+Then as we move to the second row, I transform it into a one, and the second yellow box indicates where we've successfully fooled the model into thinking it's a one with high probability. 11:11
+And then as you read the rest of the yellow boxes left to right, top to bottom, we go through the twos, threes, fours, and so on, until finally at the lower right we have a nine that has a yellow box around it, and it actually looks like a nine, but in this case the only reason it actually looks like a nine is that we started the whole process with a nine. 11:21
+We successfully swept through all 10 classes of MNIST without substantially changing the image of the digit in any way that would interfere with human recognition. 11:39
+This linear model was actually extremely easy to fool. 11:50
+Besides linear models, we've also seen that we can fool many different kinds of linear models including logistic regression and SVMs. 11:55
+We've also found that we can fool decision trees, and to a lesser extent, nearest neighbors classifiers. 12:04
+We wanted to explain exactly why this happens. 12:13
+Back in about 2014, after we'd published the original paper where we'd said that these problems exist, we were trying to figure out why they happen. 12:16
+When we wrote our first paper, we thought that basically this is a form of overfitting, that you have a very complicated deep neural network, it learns to fit the training set, its behavior on the test set is somewhat undefined, and then it makes random mistakes that an attacker can exploit. 12:25
+Let's walk through what that story looks like somewhat concretely. 12:44
+I have here a training set of three blue X's and three green O's. 12:47
+We want to make a classifier that can recognize X's and recognize O's. 12:53
+We have a very complicated classifier that can easily fit the training set, so we represent everywhere it believes X's should be with blobs of blue color, and I've drawn a blob of blue around all of the training set X's, so it correctly classifies the training set. 12:57
+It also has a blob of green mass showing where the O's are, and it successfully fits all of the green training set O's, but then because this is a very complicated function and it has just way more parameters than it actually needs to represent the training task, it throws little blobs of probability mass around the rest of space randomly. 13:13
+On the left there's a blob of green space that's kind of near the training set X's, and I've drawn a red X there to show that maybe this would be an adversarial example where we expect the classification to be X, but the model assigns O. 13:35
+On the right, I've shown that there's a red O where we have another adversarial example. 13:48
+We're very near the other O's. 13:53
+We might expect the model to assign this class to be an O, and yet because it's drawn blue mass there it's actually assigning it to be an X. 13:55
+If overfitting is really the story then each adversarial example is more or less the result of bad luck and also more or less unique. 14:04
+If we fit the model again or we fit a slightly different model we would expect to make different random mistakes on this points that are off the training set, but that was actually not what we found at all. 14:12
+We found that many different models would misclassify the same adversarial examples, and they would assign the same class to them. 14:25
+We also found that if we took the difference between an original example and an adversarial example then we had a direction in input space and we could add that same offset vector to any clean example, and we would almost always get an adversarial example as a result. 14:33
+So we started to realize that there was systematic effect going on here, not just a random effect. 14:52
+That led us to another idea which is that adversarial examples might actually be more like underfitting rather than overfitting. 14:57
+They might actually come from the model being too linear. 15:05
+Here I draw the same task again where we have the same manifold of O's and the same line of X's, and this time I fit a linear model to the data set rather than fitting a high capacity, non-linear model to it. 15:09
+We see that we get a dividing hyperplane running in between the two classes. 15:23
+This hyperplane doesn't really capture the true structure of the classes. 15:29
+The O's are clearly arranged in a C-shaped manifold. 15:33
+If we keep walking past the end of the O's, we've crossed the decision boundary and we've drawn a red O where even though we're very near the decision boundary and near other O's we believe that it is now an X. 15:37
+Similarly we can take steps that go from near X's to just over the line that are classified as O's. 15:49
+Another thing that's somewhat unusual about this plot is that if we look at the lower left or upper right corners these corners are very confidently classified as being X's on the lower left or O's on the upper right even though we've never seen any data over there at all. 15:57
+The linear model family forces the model to have very high confidence in these regions that are very far from the decision boundary. 16:12
+We've seen that linear models can actually assign really unusual confidence as you move very far from the decision boundary, even if there isn't any data there, but are deep neural networks actually anything like linear models? 16:22
+Could linear models actually explain anything about how it is that deep neural nets fail? 16:36
+It turns out that modern deep neural nets are actually very piecewise linear, so rather than being a single linear function they are piecewise linear with maybe not that many linear pieces. 16:41
+If we use rectified linear units then the mapping from the input image to the output logits is literally a piecewise linear function. 16:53
+By the logits I mean the un-normalized log probabilities before we apply the softmax op at the output of the model. 17:03
+There are other neural networks like maxout networks that are also literally piecewise linear. 17:11
+And then there are several that become very close to it. 17:17
+Before rectified linear units became popular most people used to use sigmoid units of one form or another either logistic sigmoid or hyperbolic tangent units. 17:19
+These sigmoidal units have to be carefully tuned, especially at initialization so that you spend most of your time near the center of the sigmoid where the sigmoid is approximately linear. 17:30
+Then finally, the LSTM, a kind of recurrent network that is one of the most popular recurrent networks today, uses addition from one time step to the next in order to accumulate and remember information over time. 17:43
+Addition is a particularly simple form of linearity, so we can see that the interaction from a very distant time step in the past and the present is highly linear within an LSTM. 17:56
+Now to be clear, I'm speaking about the mapping from the input of the model to the output of the model. 18:09
+That's what I'm saying is close to being linear or is piecewise linear with relatively few pieces. 18:14
+The mapping from the parameters of the network to the output of the network is non-linear because the weight matrices at each layer of the network are multiplied together. 18:21
+So we actually get extremely non-linear reactions between parameters and the output. 18:31
+That's what makes training a neural network so difficult. 18:36
+But the mapping from the input to the output is much more linear and predictable, and it means that optimization problems that aim to optimize the input to the model are much easier than optimization problems that aim to optimize the parameters. 18:39
+If we go and look for this happening in practice we can take a convolutional network and trace out a one-dimensional path through its input space. 18:57
+So what we're doing here is we're choosing a clean example. 19:07
+It's an image of a white car on a red background, and we are choosing a direction that will travel through space. 19:09
+We are going to have a coefficient epsilon that we multiply by this direction. 19:16
+When epsilon is negative 30, like at the left end of the plot, we're subtracting off a lot of this unit vector direction. 19:21
+When epsilon is zero, like in the middle of the plot, we're visiting the original image from the data set, and when epsilon is positive 30, like at the right end of the plot, we're adding this direction onto the input. 19:28
+In the panel on the left, I show you an animation where we move from epsilon equals negative 30 as up to epsilon equals positive 30. 19:42
+You read the animation left to right, top to bottom, and everywhere that there's a yellow box the input has correctly recognized as being a car. 19:50
+On the upper left, you see that it looks mostly blue. 20:01
+On the lower right, it's hard to tell what's going on. 20:04
+It's kind of reddish and so on. 20:07
+In the middle row, just after where the yellow boxes end you can see pretty clearly that it's a car on a red background, though the image is small on these slides. 20:10
+What's interesting to look at here is the logits that the model outputs. 20:20
+This is a deep convolutional rectified linear unit network. 20:25
+Because it uses rectified linear units, we know that the output is a piecewise linear function of the input to the model. 20:30
+The main question we're asking by making this plot is how many different pieces does this piecewise linear function have if we look at one particular cross section. 20:38
+You might think that maybe a deep net is going to represent some extremely wiggly complicated function with lots and lots of linear pieces no matter which cross section you look in. 20:48
+Or we might find that it has more or less two pieces for each function we look at. 20:58
+Each of the different curves on this plot is the logits for a different class. 21:04
+We see that out at the tails of the plot that the frog class is the most likely, and the frog class basically looks like a big v-shaped function. 21:10
+The logits for the frog class become very high when epsilon is negative 30 or positive 30, and they drop down and become a little bit negative when epsilon is zero. 21:21
+The car class, listed as automobile here, it's actually high in the middle, and the car is correctly recognized. 21:32
+As we sweep out to very negative epsilon, the logits for the car class do increase, but they don't increase nearly as quickly as the logits for the frog class. 21:42
+So, we've found a direction that's associated with the frog class and as we follow it out to a relatively large perturbation, we find that the model extrapolates linearly and begins to make a very unreasonable prediction that the frog class is extremely likely just because we've moved for a long time in this direction that was locally associated with the frog class being more likely. 21:51
+When we actually go and construct adversarial examples, we need to remember that we're able to get quite a large perturbation without changing the image very much as far as a human being is concerned. 22:17
+So here I show you a handwritten digit three, and I'm going to change it in several different ways, and all of these changes have the same L2 norm perturbation. 22:30
+In the top row, I'm going to change the three into a seven just by looking for the nearest seven in the training set. 22:40
+The difference between those two is this image that looks a little bit like the seven wrapped in some black lines. 22:47
+So here white pixels in the middle image in the perturbation column, the white pixels represent adding something and black pixels represent subtracting something as you move from the left column to the right column. 22:55
+So when we take the three and we apply this perturbation that transforms it into a seven, we can measure the L2 norm of that perturbation. 23:08
+And it turns out to have an L2 norm of 3.96. 23:16
+That gives you kind of a reference for how big these perturbations can be. 23:20
+In the middle row, we apply a perturbation of exactly the same size, but with the direction chosen randomly. 23:24
+In this case we don't actually change the class of the three at all, we just get some random noise that didn't really change the class. 23:30
+A human could still easily read it as being a three. 23:37
+And then finally at the very bottom row, we take the three and we just erase a piece of it with a perturbation of the same norm and we turn it into something that doesn't have any class at all. 23:41
+It's not a three, it's not a seven, it's just a defective input. 23:52
+All of these changes can happen with the same L2 norm perturbation. 23:56
+And actually a lot of the time with adversarial examples, you make perturbations that have an even larger L2 norm. 24:00
+What's going on is that there are several different pixels in the image, and so small changes to individual pixels can add up to relatively large vectors. 24:06
+For larger datasets like ImageNet, where there's even more pixels, you can make very small changes to each pixel that travel very far in vector space as measured by the L2 norm. 24:15
+That means that you can actually make changes that are almost imperceptible but actually move you really far and get a large dot product with the coefficients of the linear function that the model represents. 24:26
+It also means that when we're constructing adversarial examples, we need to make sure that the adversarial example procedure isn't able to do what happened in the top row of this slide here. 24:38
+So in the top row of this slide, we took the three and we actually just changed it into a seven. 24:48
+So when the model says that the image in the upper right is a seven, it's not a mistake. 24:52
+We actually just changed the input class. 24:56
+When we build adversarial examples, we want to make sure that we're measuring real mistakes. 24:59
+If we're experimenters studying how easy a network is to fool, we want to make sure that we're actually fooling it and not just changing the input class. 25:02
+And if we're an attacker, we actually want to make sure that we're causing misbehavior in the system. 25:11
+To do that, when we build adversarial examples, we use the maxnorm to constrain the perturbation. 25:17
+Basically this says that no pixel can change by more than some amount epsilon. 25:24
+So the L2 norm can get really big, but you can't concentrate all the changes for that L2 norm to erase pieces of the digit, like in the bottom row here we erased the top of a three. 25:28
+One very fast way to build an adversarial example is just to take the gradient of the cost that you used to train the network with respect to the input, and then take the sign of that gradient. 25:39
+The sign is essentially enforcing the maxnorm constraint. 25:51
+You're only allowed to change the input by up to epsilon at each pixel, so if you just take the sign it tells you whether you want to add epsilon or subtract epsilon in order to hurt the network. 25:55
+You can view this as taking the observation that the network is more or less linear, as we showed on this slide, and using that to motivate building a first order Taylor series approximation of the neural network's cost. 26:07
+And then subject to that Taylor series approximation, we want to maximize the cost following this maxnorm constraint. 26:21
+And that gives us this technique that we call the fast gradient sign method. 26:28
+If you want to just get your hands dirty and start making adversarial examples really quickly, or if you have an algorithm where you want to train on adversarial examples in the inner loop of learning, this method will make adversarial examples for you very, very quickly. 26:32
+In practice you should also use other methods, like Nicholas Carlini's attack based on multiple steps of the Adam optimizer, to make sure that you have a very strong attack that you bring out when you think you have a model that might be more powerful. 26:45
+A lot of the time people find that they can defeat the fast gradient sign method and think that they've built a successful defense, but then when you bring out a more powerful method that takes longer to evaluate, they find that they can't overcome the more computationally expensive attack. 26:59
+I've told you that adversarial examples happen because the model is very linear. 27:18
+And then I told you that we could use this linearity assumption to build this attack, the fast gradient sign method. 27:22
+This method, when applied to a regular neural network that doesn't have any special defenses, will get over a 99% attack success rate. 27:28
+So that seems to confirm, somewhat, this hypothesis that adversarial examples come from the model being far too linear and extrapolating in linear fashions when it shouldn't. 27:38
+Well we can actually go looking for some more evidence. 27:48
+My friend David Warde-Farley and I built these maps of the decision boundaries of neural networks. 27:51
+And we found that they are consistent with the linearity hypothesis. 27:57
+So the FGSM is that attack method that I described in the previous slide, where we take the sign of the gradient. 28:02
+We'd like to build a map of a two-dimensional cross section of input space and show which classes are assigned to the data at each point. 28:08
+In the grid on the right, each different cell, each little square within the grid, is a map of a CIFAR-10 classifier's decision boundary, with each cell corresponding to a different CIFAR-10 testing sample. 28:18
+On the left I show you a little legend where you can understand what each cell means. 28:32
+The very center of each cell corresponds to the original example from the CIFAR-10 dataset with no modification. 28:37
+As we move left to right in the cell, we're moving in the direction of the fast gradient sign method attack. 28:45
+So just the sign of the gradient. 28:50
+As we move up and down within the cell, we're moving in a random direction that's orthogonal to the fast gradient sign method direction. 28:53
+So we get to see a cross section, a 2D cross section of CIFAR-10 decision space. 29:00
+At each pixel within this map, we plot a color that tells us which class is assigned there. 29:07
+We use white pixels to indicate that the correct class was chosen, and then we used different colors to represent all of the other incorrect classes. 29:13
+You can see that in nearly all of the grid cells on the right, roughly the left half of the image is white. 29:21
+So roughly the left half of the image has been correctly classified. 29:29
+As we move to the right, we see that there is usually a different color on the right half. 29:33
+And the boundaries between these regions are approximately linear. 29:39
+What's going on here is that the fast gradient sign method has identified a direction where if we get a large dot product with that direction we can get an adversarial example. 29:43
+And from this we can see that adversarial examples live more or less in linear subspaces. 29:52
+When we first discovered adversarial examples, we thought that they might live in little tiny pockets. 29:59
+In the first paper we actually speculated that maybe they're a little bit like the rational numbers, hiding out finely tiled among the real numbers, with nearly every real number being near a rational number. 30:04
+We thought that because we were able to find an adversarial example corresponding to every clean example that we loaded into the network. 30:15
+After doing this further analysis, we found that what's happening is that every real example is near one of these linear decision boundaries where you cross over into an adversarial subspace. 30:22
+And once you're in that adversarial subspace, all the other points nearby are also adversarial examples that will be misclassified. 30:32
+This has security implications because it means you only need to get the direction right. 30:40
+You don't need to find an exact coordinate in space. 30:46
+You just need to find a direction that has a large dot product with the sign of the gradient. 30:48
+And once you move more or less approximately in that direction, you can fool the model. 30:54
+We also made another cross section where after using the left-right axis as the fast gradient sign method, we looked for a second direction that has high dot product with the gradient so we could make both axes adversarial. 31:01
+And in this case you see that we get linear decision boundaries. 31:14
+They're now oriented diagonally rather than vertically, but you can see that there's actually this two-dimensional subspace of adversarial examples that we can cross into. 31:18
+Finally it's important to remember that adversarial examples are not noise. 31:29
+You can add a lot of noise to an adversarial example and it will stay adversarial. 31:33
+You can add a lot of noise to a clean example and it will stay clean. 31:37
+Here we make random cross sections where both axes are randomly chosen directions. 31:40
+And you see that on CIFAR-10, most of the cells are completely white, meaning that they're correctly classified to start with, and when you add noise they stay correctly classified. 31:45
+We also see that the model makes some mistakes because this is the test set. 31:54
+And generally if a test example starts out misclassified, adding the noise doesn't change it. 31:58
+There are a few exceptions where, if you look in the third row, third column, noise actually can make the model misclassify the example for especially large noise values. 32:03
+And there's even some where, in the top row there's one example you can see where the model is misclassifying the test example to start with but then noise can change it to be correctly classified. 32:14
+For the most part, noise has very little effect on the classification decision compared to adversarial examples. 32:26
+What's going on here is that in high dimensional spaces, if you choose some reference vector and then you choose a random vector in that high dimensional space, the random vector will, on average, have zero dot product with the reference vector. 32:33
+So if you think about making a first order Taylor series approximation of your cost, and thinking about how your Taylor series approximation predicts that random vectors will change your cost. 32:49
+You see that random vectors on average have no effect on the cost. 33:00
+But adversarial examples are chosen to maximize it. 33:04
+In these plots we looked in two dimensions. 33:10
+More recently, Florian Tramer here at Stanford got interested in finding out just how many dimensions there are to these subspaces where the adversarial examples lie in a thick contiguous region. 33:13
+And we came up with an algorithm together where you actually look for several different orthogonal vectors that all have a large dot product with the gradient. 33:25
+By looking in several different orthogonal directions simultaneously, we can map out this kind of polytope where many different adversarial examples live. 33:35
+We found out that this adversarial region has on average about 25 dimensions. 33:45
+If you look at different examples you'll find different numbers of adversarial dimensions. 33:51
+But on average on MNIST we found it was about 25. 33:56
+So what's interesting here is the dimensionality actually tells you something about how likely you are to find an adversarial example by generating random noise. 33:59
+If every direction were adversarial, then any change would cause a misclassification. 34:09
+If most of the directions were adversarial, then random directions would end up being adversarial just by accident most of the time. 34:15
+And then if there was only one adversarial direction, you'd almost never find that direction just by adding random noise. 34:22
+When there's 25 you have a chance of doing it sometimes. 34:30
+Another interesting thing is that different models will often misclassify the same adversarial examples. 34:34
+The subspace dimensionality of the adversarial subspace relates to that transfer property. 34:39
+The larger the dimensionality of the subspace, the more likely it is that the subspaces for two models will intersect. 34:46
+So if you have two different models that have a very large adversarial subspace, you know that you can probably transfer adversarial examples from one to the other. 34:52
+But if the adversarial subspace is very small, then unless there's some kind of really systematic effect forcing them to share exactly the same subspace, it seems less likely that you'll be able to transfer examples just due to the subspaces randomly aligning. 35:01
+A lot of the time in the adversarial example research community, we refer back to the story of Clever Hans. 35:17
+This comes from an essay by Bob Sturm called Clever Hans, Clever Algorithms. 35:25
+Because Clever Hans is a pretty good metaphor for what's happening with machine learning algorithms. 35:30
+So Clever Hans was a horse that lived in the early 1900s. 35:35
+His owner trained him to do arithmetic problems. 35:39
+So you could ask him, "Clever Hans, "what's two plus one?" And he would answer by tapping his hoof. 35:43
+And after the third tap, everybody would start cheering and clapping and looking excited because he'd actually done an arithmetic problem. 35:52
+Well it turned out that he hadn't actually learned to do arithmetic. 35:59
+But it was actually pretty hard to figure out what was going on. 36:03
+His owner was not trying to defraud anybody, his owner actually believed he could do arithmetic. 36:06
+And presumably Clever Hans himself was not trying to trick anybody. 36:13
+But eventually a psychologist examined him and found that if he was put in a room alone without an audience, and the person asking the questions wore a mask, he couldn't figure out when to stop tapping. 36:18
+You'd ask him, "Clever Hans, "what's one plus one?" And he'd just [knocking] keep staring at your face, waiting for you to give him some sign that he was done tapping. 36:31
+So everybody in this situation was trying to do the right thing. 36:42
+Clever Hans was trying to do whatever it took to get the apple that his owner would give him when he answered an arithmetic problem. 36:46
+His owner did his best to train him correctly with real arithmetic questions and real rewards for correct answers. 36:53
+And what happened was that Clever Hans inadvertently focused on the wrong cue. 37:00
+He found this cue of people's social reactions that could reliably help him solve the problem, but then it didn't generalize to a test set where you intentionally took that cue away. 37:07
+It did generalize to a naturally occurring test set, where he had an audience. 37:18
+So that's more or less what's happening with machine learning algorithms. 37:22
+They've found these very linear patterns that can fit the training data, and these linear patterns even generalize to the test data. 37:26
+They've learned to handle any example that comes from the same distribution as their training data. 37:34
+But then if you shift the distribution that you test them on, if a malicious adversary actually creates examples that are intended to fool them, they're very easily fooled. 37:40
+In fact we find that modern machine learning algorithms are wrong almost everywhere. 37:51
+We tend to think of them as being correct most of the time, because when we run them on naturally occurring inputs they achieve very high accuracy percentages. 37:56
+But if we look instead of as the percentage of samples from an IID test set, if we look at the percentage of the space in RN that is correctly classified, we find that they misclassify almost everything and they behave reasonably only on a very thin manifold surrounding the data that we train them on. 38:06
+In this plot, I show you several different examples of Gaussian noise that I've run through a CIFAR-10 classifier. 38:27
+Everywhere that there is a pink box, the classifier thinks that there is something rather than nothing. 38:35
+I'll come back to what that means in a second. 38:40
+Everywhere that there is a yellow box, one step of the fast gradient sign method was able to persuade the model that it was looking specifically at an airplane. 38:43
+I chose the airplane class because it was the one with the lowest success rate. 38:52
+It had about a 25% success rate. 38:56
+That means an attacker would need four chances to get noise recognized as an airplane on this model. 38:58
+An interesting thing, and appropriate enough given the story of Clever Hans, is that this model found that about 70% of RN was classified as a horse. 39:06
+So I mentioned that this model will say that noise is something rather than nothing. 39:17
+And it's actually kind of important to think about how we evaluate that. 39:22
+If you have a softmax classifier, it has to give you a distribution over the n different classes that you train it on. 39:26
+So there's a few ways that you can argue that the model is telling you that there's something rather than nothing. 39:34
+One is you can say, if it assigns something like 90% to one particular class, that seems to be voting for that class being there. 39:39
+We'd much rather see it give us something like a uniform distribution saying this noise doesn't look like anything in the training set so it's equally likely to be a horse or a car. 39:46
+And that's not what the model does. 39:56
+It'll say, this is very definitely a horse. 39:58
+Another thing that you can do is you can replace the last layer of the model. 40:01
+For example, you can use a sigmoid output for each class. 40:05
+And then the model is actually capable of telling you that any subset of classes is present. 40:10
+It could actually tell you that an image is both a horse and a car. 40:14
+And what we would like it to do for the noise is tell us that none of the classes is present, that all of the sigmoids should have a value of less than 1/2. 40:17
+And 1/2 isn't even particularly a low threshold. 40:25
+We could reasonably expect that all of the sigmoids would be less than 0.01 for such a defective input as this. 40:29
+But what we find instead is that the sigmoids tend to have at least one class present just when we run Gaussian noise of sufficient norm through the model. 40:35
+We've also found that we can do adversarial examples for reinforcement learning. 40:48
+And there's a video for this. 40:51
+I'll upload the slides after the talk and you can follow the link. 40:53
+Unfortunately I wasn't able to get the WiFi to work so I can't show you the video animated. 40:56
+But I can describe basically what's going on from this still here. 41:00
+There's a game Seaquest on Atari where you can train reinforcement learning agents to play that game. 41:05
+And you can take the raw input pixels and you can take the fast gradient sign method or other attacks that use other norms besides the max norm, and compute perturbations that are intended to change the action that the policy would select. 41:11
+So the reinforcement learning policy, you can think of it as just being like a classifier that looks at a frame. 41:27
+And instead of categorizing the input into a particular category, it gives you a softmax distribution over actions to take. 41:33
+So if we just take that and say that the most likely action should have its accuracy be decreased by the adversary. 41:40
+Sorry, to have its probability be decreased by the adversary, you'll get these perturbations of input frames that you can then apply and cause the agent to play different actions than it would have otherwise. 41:47
+And using this you can make the agent play Seaquest very, very badly. 41:58
+It's maybe not the most interesting possible thing. 42:03
+What we'd really like is an environment where there are many different reward functions available for us to study. 42:06
+So for example, if you had a robot that was intended to cook scrambled eggs, and you had a reward function measuring how well it's cooking scrambled eggs, and you had another reward function measuring how well it's cooking chocolate cake, it would be really interesting if we could make adversarial examples that cause the robot to make a chocolate cake when the user intended for it to make scrambled eggs. 42:11
+That's because it's very difficult to succeed at something and it's relatively straightforward to make a system fail. 42:35
+So right now, adversarial examples for RL are very good at showing that we can make RL agents fail. 42:40
+But we haven't yet been able to hijack them and make them do a complicated task that's different from what their owner intended. 42:45
+Seems like it's one of the next steps in adversarial example research though. 42:51
+If we look at high-dimension linear models, we can actually see that a lot of this is very simple and straightforward. 42:58
+Here we have a logistic regression model that classifies sevens and threes. 43:04
+So the whole model can be described just by a weight vector and a single scalar bias term. 43:10
+We don't really need to see the bias term for this exercise. 43:16
+If you look on the left I've plotted the weights that we used to discriminate sevens and threes. 43:20
+The weights should look a little bit like the difference between the average seven and the average three. 43:24
+And then down at the bottom we've taken the sign of the weights. 43:30
+So the gradient for a logistic regression model is going to be proportional to the weights. 43:33
+And then the sign of the weights gives you essentially the sign of the gradient. 43:38
+So we can do the fast gradient sign method to attack this model just by looking at its weights. 43:43
+In the examples in the panel that's the second column from the left we can see clean examples. 43:49
+And then on the right we've just added or subtracted this image of the sign of the weights off of them. 43:55
+To you and me as human observers, the sign of the weights is just like garbage that's in the background, and we more or less filter it out. 44:00
+It doesn't look particularly interesting to us. 44:09
+It doesn't grab our attention. 44:11
+To the logistic regression model this image of the sign of the weights is the most salient thing that could ever appear in the image. 44:14
+When it's positive it looks like the world's most quintessential seven. 44:22
+When it's negative it looks like the world's most quintessential three. 44:26
+And so the model makes its decision almost entirely based on this perturbation we added to the image, rather than on the background. 44:29
+You could also take this same procedure, and my colleague Andrej at OpenAI showed how you can modify the image on ImageNet using this same approach, and turn this goldfish into a daisy. 44:38
+Because ImageNet is much higher dimensional, you don't need to use quite as large of a coefficient on the image of the weights. 44:51
+So we can make a more persuasive fooling attack. 44:58
+You can see that this same image of the weights, when applied to any different input image, will actually reliably cause a misclassification. 45:03
+What's going on is that there are many different classes, and it means that if you choose the weights for any particular class, it's very unlikely that a new test image will belong to that class. 45:12
+So on ImageNet, if we're using the weights for the daisy class, and there are 1,000 different classes, then we have about a 99.9% chance that a test image will not be a daisy. 45:25
+If we then go ahead and add the weights for the daisy class to that image, then we get a daisy, and because that's not the correct class, it's a misclassification. 45:36
+So there's a paper at CVPR this year called Universal Adversarial Perturbations that expands a lot more on this observation that we had going back in 2014. 45:45
+But basically these weight vectors, when applied to many different images, can cause misclassification in all of them. 45:53
+I've spent a lot of time telling you that these linear models are just terrible, and at some point you've probably been hoping I would give you some sort of a control experiment to convince you that there's another model that's not terrible. 46:04
+So it turns out that some quadratic models actually perform really well. 46:16
+In particular a shallow RBF network is able to resist adversarial perturbations very well. 46:21
+Earlier I showed you an animation where I took a nine and I turned it into a zero, one, two, and so on, without really changing its appearance at all. 46:27
+And I was able to fool a linear softmax regression classifier. 46:34
+Here I've got an RBF network where it outputs a separate probability of each class being absent or present, and that probability is given by e to the negative square of the difference between a template image and the input image. 46:39
+And if we actually follow the gradient of this classifier, it does actually turn the image into a zero, a one, a two, a three, and so on, and we can actually recognize those changes. 46:55
+The problem is, this classifier does not get very good accuracy on the training set. 47:07
+It's a shallow model. 47:12
+It's basically just a template matcher. 47:13
+It is literally a template matcher. 47:15
+And if you try to make it more sophisticated by making it deeper, it turns out that the gradient of these RBF units is zero, or very near zero, throughout most of RN. 47:17
+So they're extremely difficult to train, even with batch normalization and methods like that. 47:30
+I haven't managed to train a deep RBF network yet. 47:36
+But I think if somebody comes up with better hyperparameters or a new, more powerful optimization algorithm, it might be possible to solve the adversarial example problem by training a deep RBF network where the model is so nonlinear and has such wide flat areas that the adversary is not able to push the cost uphill just by making small changes to the model's input. 47:39
+One of the things that's the most alarming about adversarial examples is that they generalize from one dataset to another and one model to another. 48:05
+Here I've trained two different models on two different training sets. 48:13
+The training sets are tiny in both cases. 48:17
+It's just MNIST three versus seven classification, and this is really just for the purpose of making a slide. 48:20
+If you train a logistic regression model on the digits shown in the left panel, you get the weights shown on the left in the lower panel. 48:26
+If you train a logistic regression model on the digits shown in the upper right, you get the weights shown on the right in the lower panel. 48:35
+So you've got two different training sets and we learn weight vectors that look very similar to each other. 48:42
+That's just because machine learning algorithms generalize. 48:47
+You want them to learn a function that's somewhat independent of the data that you train them on. 48:50
+It shouldn't matter which particular training examples you choose. 48:54
+If you want to generalize from the training set to the test set, you've also got to expect that different training sets will give you more or less the same result. 48:57
+And that means that because they've learned more or less similar functions, they're vulnerable to similar adversarial examples. 49:05
+An adversary can compute an image that fools one and use it to fool the other. 49:13
+In fact we can actually go ahead and measure the transfer rate between several different machine learning techniques, not just different data sets. 49:18
+Nicolas Papernot and his collaborators have spent a lot of time exploring this transferability effect. 49:27
+And they found that for example, logistic regression makes adversarial examples that transfer to decision trees with 87.4% probability. 49:32
+Wherever you see dark squares in this matrix, that shows that there's a high amount of transfer. 49:43
+That means that it's very possible for an attacker using the model on the left to create adversarial examples for the model on the right. 49:50
+The procedure overall is that, suppose the attacker wants to fool a model that they don't actually have access to. 50:01
+They don't know the architecture that's used to train the model. 50:07
+They may not even know which algorithm is being used. 50:11
+They may not know whether they're attacking a decision tree or a deep neural net. 50:13
+And they also don't know the parameters of the model that they're going to attack. 50:17
+So what they can do is train their own model that they'll use to build the attack. 50:23
+There's two different ways you can train your own model. 50:30
+One is you can label your own training set for the same task that you want to attack. 50:32
+Say that somebody is using an ImageNet classifier, and for whatever reason you don't have access to ImageNet, you can take your own photos and label them, train your own object recognizer. 50:36
+It's going to share adversarial examples with an ImageNet model. 50:46
+The other thing you can do is, say that you can't afford to gather your own training set. 50:50
+What you can do instead is if you can get limited access to the model where you just have the ability to send inputs to the model and observe its outputs, then you can send those inputs, observe the outputs, and use those as your training set. 50:55
+This'll work even if the output that you get from the target model is only the class label that it chooses. 51:09
+A lot of people read this and assume that you need to have access to all the probability values it outputs. 51:15
+But even just the class labels are sufficient. 51:21
+So once you've used one of these two methods, either gather your own training set or observing the outputs of a target model, you can train your own model and then make adversarial examples for your model. 51:24
+Those adversarial examples are very likely to transfer and affect the target model. 51:36
+So you can then go and send those out and fool it, even if you didn't have access to it directly. 51:41
+We've also measured the transferability across different data sets, and for most models we find that they're kind of in an intermediate zone where different data sets will result in a transfer rate of, like, 60% to 80%. 51:48
+There's a few models like SVMs that are very data dependent because SVMs end up focusing on a very small subset of the training data to form their final decision boundary. 52:01
+But most models that we care about are somewhere in the intermediate zone. 52:10
+Now that's just assuming that you rely on the transfer happening naturally. 52:17
+You make an adversarial example and you hope that it will transfer to your target. 52:22
+What if you do something to stack the deck in your favor and improve the odds that you'll get your adversarial examples to transfer? 52:26
+Dawn Song's group at UC Berkeley studied this. 52:35
+They found that if they take an ensemble of different models and they use gradient descent to search for an adversarial example that will fool every member of their ensemble, then it's extremely likely that it will transfer and fool a new machine learning model. 52:38
+So if you have an ensemble of five models, you can get it to the point where there's essentially a 100% chance that you'll fool a sixth model out of the set of models that they compared. 52:56
+They looked at things like ResNets of different depths, VGG, and GoogLeNet. 53:07
+So in the labels for each of the different rows you can see that they made ensembles that lacked each of these different models, and then they would test it on the different target models. 53:12
+So like if you make an ensemble that omits GoogLeNet, you have only about a 5% chance of GoogLeNet correctly classifying the adversarial example you make for that ensemble. 53:23
+If you make an ensemble that omits ResNet-152, in their experiments they found that there was a 0% chance of ResNet-152 resisting that attack. 53:37
+That probably indicates they should have run some more adversarial examples until they found a non-zero success rate, but it does show that the attack is very powerful. 53:48
+And then when you go look into intentionally cause the transfer effect, you can really make it quite strong. 53:57
+A lot of people often ask me if the human brain is vulnerable to adversarial examples. 54:05
+And for this lecture I can't use copyrighted material, but there's some really hilarious things on the Internet if you go looking for, like, the fake CAPTCHA with images of Mark Hamill, you'll find something that my perception system definitely can't handle. 54:10
+So here's another one that's actually published with a license where I was confident I'm allowed to use it. 54:29
+You can look at this image of different circles here, and they appear to be intertwined spirals. 54:35
+But in fact they are concentric circles. 54:42
+The orientation of the edges of the squares is interfering with the edge detectors in your brain, making it look like the circles are spiraling. 54:45
+So you can think of these optical illusions as being adversarial examples in the human brain. 54:55
+What's interesting is that we don't seem to share many adversarial examples in common with machine learning models. 54:59
+Adversarial examples transfer extremely reliably between different machine learning models, especially if you use that ensemble trick that was developed at UC Berkeley. 55:05
+But those adversarial examples don't fool us. 55:15
+It tells us that we must be using a very different algorithm or model family than current convolutional networks. 55:18
+We don't really know what the difference is yet, but it would be very interesting to figure that out. 55:25
+It seems to suggest that studying adversarial examples could tell us how to significantly improve our existing machine learning models. 55:30
+Even if you don't care about having an adversary, we might figure out something or other about how to make machine learning algorithms deal with ambiguity and unexpected inputs more like a human does. 55:37
+If we actually want to go out and do attacks in practice, there's started to be a body of research on this subject. 55:52
+Nicolas Papernot showed that he could use the transfer effect to fool classifiers hosted by MetaMind, Amazon, and Google. 56:00
+So these are all just different machine learning APIs where you can upload a dataset and the API will train the model for you. 56:09
+And then you don't actually know, in most cases, which model is trained for you. 56:16
+You don't have access to its weights or anything like that. 56:21
+So Nicolas would train his own copy of the model using the API, and then build a model on his own personal desktop where he could fool the API hosted model. 56:23
+Later, Berkeley showed you could fool Clarifai in this way. 56:34
+Yeah? 56:36
+- [Man] What did you mean when you said machine having adversarial models don't generally fool us? 56:37
+Because I thought that was part of the point that we generally do machine-generated adversarial models where just a few pixels change. 56:41
+- Oh, so if we look at, for example, like this picture of the panda. 56:48
+To us it looks like a panda. 56:55
+To most machine learning models it looks like a gibbon. 56:56
+And so this change isn't interfering with our brains, but it fools reliably with lots of different machine learning models. 56:59
+I saw somebody actually took this image of the perturbation out of our paper, and they pasted it on their Facebook profile picture to see if it could interfere with Facebook recognizing them. 57:08
+And they said that it did. 57:20
+I don't think that Facebook has a gibbon tag though, so we don't know if they managed to make it think that they were a gibbon. 57:22
+And one of the other things that you can do that's of fairly high practical significance is you can actually fool malware detectors. 57:34
+Catherine Gross at the University of Saarland wrote a paper about this. 57:42
+And there's starting to be a few others. 57:45
+There's a model called MalGAN that actually uses a GAN to generate adversarial examples for malware detectors. 57:47
+Another thing that matters a lot if you are interested in using these attacks in the real world and defending against them in the real world is that a lot of the time you don't actually have access to the digital input to a model. 57:54
+If you're interested in the perception system for a self-driving car or a robot, you probably don't get to actually write to the buffer on the robot itself. 58:06
+You just get to show the robot objects that it can see through a camera lens. 58:15
+So my colleague Alexey Kurakin and Samy Bengio and I wrote a paper where we studied if we can actually fool an object recognition system running on a phone, where it perceives the world through a camera. 58:20
+Our methodology was really straightforward. 58:33
+We just printed out several pictures of adversarial examples. 58:35
+And we found that the object recognition system run by the camera was fooled by them. 58:38
+The system on the camera is actually different from the model that we used to generate the adversarial examples. 58:44
+So we're showing not just transfer across the changes that happen when you use the camera, we're also showing that those transfer across the model that you use. 58:49
+So the attacker could conceivably fool a system that's deployed in a physical agent, even if they don't have access to the model on that agent and even if they can't interface directly with the agent but just subtly modify objects that it can see in its environment. 59:00
+Yeah? 59:19
+- [Man] Why does the, for the low quality camera image noise not affect the adversarial example? 59:20
+Because that's what one would expect. 59:26
+- Yeah, so I think a lot of that comes back to the maps that I showed earlier. 59:28
+If you cross over the boundary into the realm of adversarial examples, they occupy a pretty wide space and they're very densely packed in there. 59:34
+So if you jostle around a little bit, you're not going to recover from the adversarial attack. 59:43
+If the camera noise, somehow or other, was aligned with the negative gradient of the cost, then the camera could take a gradient descent step downhill and rescue you from the uphill step that the adversary took. 59:48
+But probably the camera's taking more or less something that you could model as a random direction. 60:01
+Like clearly when you use the camera more than once it's going to do the same thing each time, but from the point of view of how that direction relates to the image classification problem, it's more or less a random variable that you sample once. 60:06
+And it seems unlikely to align exactly with the normal to this class boundary. 60:22
+There's a lot of different defenses that we'd like to build. 60:33
+And it's a little bit disappointing that I'm mostly here to tell you about attacks. 60:36
+I'd like to tell you how to make your systems more robust. 60:41
+But basically every attack we've tried has failed pretty badly. 60:44
+And in fact, even when people have published that they successfully defended. 60:49
+Well, there's been several papers on arXiv over the last several months. 60:55
+Nicholas Carlini at Berkeley just released a paper where he shows that 10 of those defenses are broken. 60:59
+So this is a really, really hard problem. 61:07
+You can't just make it go away by using traditional regularization techniques. 61:09
+Particular, generative models are not enough to solve the problem. 61:15
+A lot of people say, "Oh the problem that's going on here "is you don't know anything about the distribution "over the input pixels. 61:19
+"If you could just tell "whether the input is realistic or not "then you'd be able to resist it." It turns out that what's going on here is what matters more than getting the right distributions over the inputs x, is getting the right posterior distribution over the class of labels y given inputs x. 61:25
+So just using a generative model is not enough to solve the problem. 61:42
+I think a very carefully designed generative model could possibly do it. 61:46
+Here I show two different modes of a bimodal distribution, and we have two different generative models that try to capture these modes. 61:51
+On the left we have a mixture of two Gaussians. 61:58
+On the right we have a mixture of two Laplacians. 62:01
+You can not really tell the difference visually between the distribution they impose over x, and the difference in the likelihood they assign to the training data is negligible. 62:04
+But the posterior distribution they assign over classes is extremely different. 62:13
+On the left we get a logistic regression classifier that has very high confidence out in the tails of the distribution where there is never any training data. 62:17
+On the right, with the Laplacian distribution, we level off to more or less 50-50. 62:27
+Yeah? 62:33
+[speaker drowned out] The issue is that it's a nonstationary distribution. 62:33
+So if you train it to recognize one kind of adversarial example, then it will become vulnerable to another kind that's designed to fool its detector. 62:46
+That's one of the category of defenses that Nicholas broke in his latest paper that he put out. 62:55
+So here basically the choice of exactly the family of generative model has a big effect in whether the posterior becomes deterministic or uniform, as the model extrapolates. 63:04
+And if we could design a really rich, deep generative model that can generate realistic ImageNet images and also correctly calculate its posterior distribution, then maybe something like this approach could work. 63:17
+But at the moment it's really difficult to get any of those probabilistic calculations correct. 63:31
+And what usually happens is, somewhere or other we make an approximation that causes the posterior distribution to extrapolate very linearly again. 63:36
+It's been a difficult engineering challenge to build generative models that actually capture these distributions accurately. 63:45
+The universal approximator theorem tells us that whatever shape we would like our classification function to have, a neural net that's big enough ought to be able to represent it. 63:55
+It's an open question whether we can train the neural net to have that function, but we know that we should be able to at least give the right shape. 64:06
+So so far we've been getting neural nets that give us these very linear decision functions, and we'd like to get something that looks a little bit more like a step function. 64:13
+So what if we actually just train on adversarial examples? 64:21
+For every input x in the training set, we also say we want you to train x plus an attack to map to the same class label as the original. 64:25
+It turns out that this sort of works. 64:34
+You can generally resist the same kind of attack that you train on. 64:37
+And an important consideration is making sure that you could run your attack very quickly so that you can train on lots of examples. 64:41
+So here the green curve at the very top, the one that doesn't really descend much at all, that's the test set error on adversarial examples if you train on clean examples only. 64:48
+The cyan curve that descends more or less diagonally through the middle of the plot, that's the tester on adversarial examples if you train on adversarial examples. 65:00
+You can see that it does actually reduce significantly. 65:10
+It gets down to a little bit less than 1% error. 65:13
+And the important thing to keep in mind here is that this is fast gradient sign method adversarial examples. 65:16
+It's much harder to resist iterative multi-step adversarial examples where you run an optimizer for a long time searching for a vulnerability. 65:23
+And another thing to keep in mind is that we're testing on the same kind of adversarial examples that we train on. 65:31
+It's harder to generalize from one optimization algorithm to another. 65:36
+By comparison, if you look at what happens on clean examples, the blue curve shows what happens on the clean test set error rate if you train only on clean examples. 65:42
+The red curve shows what happens if you train on both clean and adversarial examples. 65:55
+We see that the red curve actually drops lower than the blue curve. 66:01
+So on this task, training on adversarial examples actually helped us to do the original task better. 66:04
+This is because in the original task we were overfitting. 66:10
+Training on adversarial examples is good regularizer. 66:12
+If you're overfitting it can make you overfit less. 66:15
+If you're underfitting it'll just make you underfit worse. 66:18
+Other kinds of models besides deep neural nets don't benefit as much from adversarial training. 66:21
+So when we started this whole topic of study we thought that deep neural nets might be uniquely vulnerable to adversarial examples. 66:27
+But it turns out that actually they're one of the few models that has a clear path to resisting them. 66:33
+Linear models are just always going to be linear. 66:38
+They don't have much hope of resisting adversarial examples. 66:40
+Deep neural nets can be trained to be nonlinear, and so it seems like there's a path to a solution for them. 66:44
+Even with adversarial training, we still find that we aren't able to make models where if you optimize the input to belong to different classes, you get examples in those classes. 66:50
+Here I start with a CIFAR-10 truck and I turn it into each of the 10 different CIFAR-10 classes. 67:01
+Toward the middle of the plot you can see that the truck has started to look a little bit like a bird. 67:07
+But the bird class is the only one that we've come anywhere near hitting. 67:12
+So even with adversarial training, we're still very far from solving this problem. 67:15
+When we do adversarial training, we rely on having labels for all the examples. 67:21
+We have an image that's labeled as a bird. 67:25
+We make a perturbation that's designed to decrease the probability of the bird class, and we train the model that the image should still be a bird. 67:27
+But what if you don't have labels? 67:33
+It turns out that you can actually train without labels. 67:35
+You ask the model to predict the label of the first image. 67:39
+So if you've trained for a little while and your model isn't perfect yet, it might say, oh, maybe this is a bird, maybe it's a plane. 67:42
+There's some blue sky there, I'm not sure which of these two classes it is. 67:47
+Then we make an adversarial perturbation that's intended to change the guess and we just try to make it say, oh this is a truck, or something like that. 67:51
+It's not whatever you believed it was before. 67:59
+You can then train it to say that the distribution of our classes should still be the same as it was before, but this should still be considered probably a bird or a plane. 68:01
+This technique is called virtual adversarial training, and it was invented by Takeru Miyato. 68:10
+He was my Intern at Google after he did this work. 68:15
+At Google we invited him to come and apply his invention to text classification, because this ability to learn from unlabeled examples makes it possible to do semi-supervised learning where you learn from both unlabeled and labeled examples. 68:18
+And there's quite a lot of unlabeled text in the world. 68:35
+So we were able to bring down the error rate on several different text classification tasks by using this virtual adversarial training. 68:38
+Finally, there's a lot of problems where we'd like to use neural nets to guide optimization procedures. 68:47
+If we want to make a very, very fast car, we could imagine a neural net that looks at the blueprints for a car and predicts how fast it will go. 68:54
+If we could then optimize with respect to the input of the neural net and find the blueprint that it predicts would go the fastest, we could build an incredibly fast car. 69:02
+Unfortunately, what we get right now is not a blueprint for a fast car. 69:11
+We get an adversarial example that the model thinks is going to be very fast. 69:14
+If we're able to solve the adversarial example problem, we'll be able to solve this model-based optimization problem. 69:18
+I like to call model-based optimization the universal engineering machine. 69:25
+If we're able to do model-based optimization, we'll be able to write down a function that describes a thing that doesn't exist yet but we wish that we had. 69:29
+And then gradient descent and neural nets will figure out how to build it for us. 69:37
+We can use that to design new genes and new molecules for medicinal drugs, and new circuits to make GPUs run faster and things like that. 69:41
+So I think overall, solving this problem could unlock a lot of potential technological advances. 69:51
+In conclusion, attacking machine learning models is extremely easy, and defending them is extremely difficult. 69:58
+If you use adversarial training you can get a little bit of a defense, but there's still many caveats associated with that defense. 70:03
+Adversarial training and virtual adversarial training also make it possible to regularize your model and even learn from unlabeled data so you can do better on regular test examples, even if you're not concerned about facing an adversary. 70:11
+And finally, if we're able to solve all of these problems, we'll be able to build a black box model-based optimization system that can solve all kinds of engineering problems that are holding us back in many different fields. 70:23
+I think I have a few minutes left for questions. 70:35
+[audience applauds] [speaker drowned out] Yeah. 70:39
+Oh, so, there's some determinism to the choice of those 50 directions. 71:15
+Oh right, yeah. 71:22
+So repeating the questions. 71:23
+I've said that the same perturbation can fool many different models or the same perturbation can be applied to many different clean examples. 71:24
+I've also said that the subspace of adversarial perturbations is only about 50 dimensional, even if the input dimension is 3,000 dimensional. 71:31
+So how is it that these subspaces intersect? 71:40
+The reason is that the choice of the subspace directions is not completely random. 71:43
+It's generally going to be something like pointing from one class centroid to another class centroid. 71:49
+And if you look at that vector and visualize it as an image, it might not be meaningful to a human just because humans aren't very good at imagining what class centroids look like. 71:55
+And we're really bad at imagining differences between centroids. 72:06
+But there is more or less this systematic effect that causes different models to learn similar linear functions, just because they're trying to solve the same task. 72:10
+[speaker drowned out] Yeah, so the question is, is it possible to identify which layer contributes the most to this issue? 72:22
+One thing is that if you, the last layer is somewhat important. 72:33
+Because, say that you made a feature extractor that's completely robust to adversarial perturbations and can shrink them to be very, very small, and then the last layer is still linear. 72:39
+Then it has all the problems that are typically associated with linear models. 72:51
+And generally you can do adversarial training where you perturb all the different layers, all the hidden layers as well as the input. 72:57
+In this lecture I only described perturbing the input because it seems like that's where most of the benefit comes from. 73:04
+The one thing that you can't do with adversarial training is perturb the very last layer before the softmax, because that linear layer at the end has no way of learning to resist the perturbations. 73:09
+Doing adversarial training at that layer usually just breaks the whole process. 73:18
+But other than that, it seems very problem dependent. 73:23
+There's a paper by Sara Sabour and her collaborators called Adversarial Manipulation of Deep Representations, where they design adversarial examples that are intended to fool different layers of the net. 73:27
+They report some things about, like, how large of a perturbation is needed at the input to get different sizes of perturbation at different hidden layers. 73:41
+I suspect that if you trained the model to resist perturbations at one layer, then another layer would become more vulnerable and it would be like a moving target. 73:49
+[speaker drowned out] Yes, so the question is, how many adversarial examples are needed to improve the misclassification rate? 74:00
+Some of our plots we include learning curves. 74:15
+Or some of our papers we include learning curves, so you can actually see, like in this one here. 74:20
+Every time we do an epoch we've generated the same number of adversarial examples as there are training examples. 74:26
+So every epoch here is 50,000 adversarial examples. 74:33
+You can see that adversarial training is a very data hungry process. 74:37
+You need to make new adversarial examples every time you update the weights. 74:43
+And they're constantly changing in reaction to whatever the model has learned most recently. 74:47
+[speaker drowned out] Oh, the model-based optimization, yeah. 74:55
+Yeah, so the question is just to elaborate further on this problem. 75:11
+So most of the time that we have a machine learning model, it's something like a classifier or a regression model where we give it an input from the test set and it gives us an output. 75:16
+And usually that input is randomly occurring and comes from the same distribution as the training set. 75:29
+We usually just run the model, get its prediction, and then we're done with it. 75:34
+Sometimes we have feedback loops, like for recommender systems. 75:39
+If you work at Netflix and you recommend a movie to a viewer, then they're more likely to watch that movie and then rate it, and then there's going to be more ratings of it in your training set so you'll recommend it to more people in the future. 75:44
+So there's this feedback loop from the output of your model to the input. 75:57
+Most of the time when we build machine vision systems, there's no feedback loop from their output to their input. 76:00
+If we imagine a setting where we start using an optimization algorithm to find inputs that maximize some property of the output, like if we have a model that looks at the blueprints of a car and outputs the expected speed of the car, then we could use gradient ascent to look for the blueprints that correspond to the fastest possible car. 76:08
+Or for example if we're designing a medicine, we could look for the molecular structure that we think is most likely to cure some form of cancer, or the least likely to cause some kind of liver toxicity effect. 76:31
+The problem is that once we start using optimization to look for these inputs that maximize the output of the model, the input is no longer an independent sample from the same distribution as we used at the training set time. 76:45
+The model is now guiding the process that generates the data. 77:00
+So we end up finding essentially adversarial examples. 77:06
+Instead of the model telling us how we can improve the input, what we usually find in practice is that we've got an input that fools the model into thinking that the input corresponds to something great. 77:11
+So we'd find molecules that are very toxic but the model thinks they're very non-toxic. 77:23
+Or we'd find cars that are very slow but the model thinks are very fast. 77:28
+[speaker drowned out] Yeah, so the question is, here the frog class is boosted by going in either the positive or negative adversarial direction. 77:35
+And in some of the other slides, like these maps, you don't get that effect where subtracting epsilon off eventually boosts the adversarial class. 78:01
+Part of what's going on is I think I'm using larger epsilon here. 78:12
+And so you might eventually see that effect if I'd made these maps wider. 78:16
+I made the maps narrower because it's like quadratic time to build a 2D map and it's linear time to build a 1D cross section. 78:20
+So I just didn't afford the GPU time to make the maps quite as wide. 78:29
+I also think that this might just be a weird effect that happened randomly on this one example. 78:35
+It's not something that I remember being used to seeing a lot of the time. 78:39
+Most things that I observe don't happen perfectly consistently. 78:43
+But if they happen, like, 80% of the time then I'll put them in my slide. 78:47
+A lot of what we're doing is trying trying to figure out more or less what's going on, and so if we find that something happens 80% of the time, then I consider it to be the dominant phenomenon that we're trying to explain. 78:52
+And after we've got a better explanation for that then I might start to try to explain some of the weirder things that happen, like the frog happening with negative epsilon. 79:03
+[speaker drowned out] I didn't fully understand the question. 79:15
+It's about the dimensionality of the adversarial? 79:24
+Oh, okay. 79:34
+So the question is, how is the dimension of the adversarial subspace related to the dimension of the input? 79:35
+And my answer is somewhat embarrassing, which is that we've only run this method on two datasets, so we actually don't have a good idea yet. 79:40
+But I think it's something interesting to study. 79:49
+If I remember correctly, my coauthors open sourced our code. 79:53
+So you could probably run it on ImageNet without too much trouble. 79:57
+My contribution to that paper was in the week that I was unemployed between working at OpenAI and working at Google, so I had access to no GPUS and I ran that experiment on my laptop on CPU, so it's only really small datasets. 80:02
+[chuckles] [speaker drowned out] Oh, so the question is, do we end up perturbing clean examples to low confidence adversarial examples?
+Yeah, in practice we usually find that we can get very high confidence on the output examples. 80:47
+One thing in high dimensions that's a little bit unintuitive is that just getting the sign right on very many of the input pixels is enough to get a really strong response. 80:53
+So the angle between the weight vector matters a lot more than the exact coordinates in high dimensional systems. 81:06
+Does that make enough sense? 81:18
+Yeah, okay. 81:20
+[Man] So we're actually going to [mumbles]. 81:21
+So if you guys need to leave, that's fine. 81:23
+But let's thank our speaker one more time for getting-- [audience applauds]  81:26

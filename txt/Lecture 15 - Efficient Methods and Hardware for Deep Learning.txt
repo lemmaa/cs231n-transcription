@@ -1,0 +1,644 @@
+Lecture 15 - Efficient Methods and Hardware for Deep Learning
+
+Hello everyone, welcome to CS231. 00:11
+I'm Song Han. 00:14
+Today I'm going to give a guest lecture on the efficient methods and hardware for deep learning.
+So I'm a fifth year PhD candidate here at Stanford, advised by Professor Bill Dally. 00:21
+So, in this course we have seen a lot of convolution neural networks, recurrent neural networks, or even since last time, the reinforcement learning. 00:28
+They are spanning a lot of applications. 00:37
+For example, the self-=driving car, machine translation, AlphaGo and Smart Robots. 00:39
+And it's changing our lives, but there is a recent trend that in order to achieve such high accuracy, the models are getting larger and larger. 00:44
+For example for ImageNet recognition, the winner from 2012 to 2015, the model size increased by 16X. 00:53
+And just in one year, for Baidu's deep speech just in one year, the training operations, the number of training operations increased by 10X. 01:02
+So such large model creates lots of problems, for example the model size becomes larger and larger so it's difficult for them to be deployed either on those for example, on the mobile phones. 01:12
+If the item is larger than 100 megabytes, you cannot download until you connect to Wi-Fi. 01:25
+So those product managers and for example Baidu, Facebook, they are very sensitive to the size of the binary size of their model. 01:30
+And also for example, the self-driving car, you can only do those on over-the-air update for the model if the model is too large, it's also difficult. 01:37
+And the second challenge for those large models is that the training speed is extremely slow. 01:47
+For example, the ResNet152, which is only a few, less than 1% actually, more accurate than ResNet101. 01:55
+Takes 1.5 weeks to train on four Maxwell M40 GPUs for example. 02:03
+Which greatly limits either we are doing homework or if the researcher's designing new models is getting pretty slow. 02:11
+And the third challenge for those bulky model is the energy efficiency. 02:19
+For example, the AlphaGo beating Lee Sedol last year, took 2000 CPUs and 300 GPUs, which cost $3,000 just to pay for the electric bill, which is insane. 02:24
+So either on those embedded devices, those models are draining your battery power for on data-center increases the total cost of ownership of maintaining a large data-center. 02:37
+For example, Google in their blog, they mentioned if all the users using the Google Voice Search for just three minutes, they have to double their data-center. 02:49
+So that's a large cost. 02:58
+So reducing such cost is very important. 03:01
+And let's see where is actually the energy consumed. 03:04
+The large model means lots of memory access. 03:08
+You have to access, load those models from the memory means more energy. 03:11
+If you look at how much energy is consumed by loading the memory versus how much is consumed by multiplications and add those arithmetic operations, the memory access is more than two or three orders of magnitude, more energy consuming than those arithmetic operations. 03:15
+So how to make deep learning more efficient. 03:40
+So we have to improve energy efficiency by this Algorithm and Hardware Co-Design. 03:43
+So this is the previous way, which is our hardware. 03:50
+For example, we have some benchmarks say Spec 2006 and then run those benchmarks and tune your CPU architectures for those benchmarks. 03:53
+Now what we should do is to open up the box to see what can we do from algorithm side first and see what is the optimum question mark processing unit. 04:06
+That breaks the boundary between the algorithm hardware to improve the overall efficiency. 04:15
+So today's talk, I'm going to have the following agenda. 04:26
+We are going to cover four aspects: The algorithm hardware and inference and training. 04:29
+So they form a small two by two matrix, so includes the algorithm for efficient inference, hardware for efficient inference and the algorithm for efficient training, and lastly, the hardware for efficient training. 04:36
+For example, I'm going to cover the TPU, I'm going to cover the Volta. 04:50
+But before I cover those things, let's have three slides for Hardware 101. 04:54
+A brief introduction of the families of hardware in such a tree. 05:02
+So in general, we can have roughly two branches. 05:07
+One is general purpose hardware. 05:11
+It can do any applications versus the specialized hardware, which is tuned for a specific kind of applications, a domain of applications. 05:14
+So the general purpose hardware includes, the CPU or the GPU, and their difference is that CPU is latency oriented, single threaded. 05:29
+It's like a big elephant. 05:38
+While the GPU is throughput oriented. 05:40
+It has many small though weak threads, but there are thousands of such small weak cores. 05:44
+Like a group of small ants, where there are so many ants. 05:49
+And specialized hardware, roughly there are FPGAs and ASICs. 05:54
+So FPGA stand for Field Programmable Gate Array. 05:59
+So it is programmable, hardware programmable so its logic can be changed. 06:03
+So it's cheaper for you to try new ideas and do prototype, but it's less efficient. 06:09
+It's in the middle between the general purpose and pure ASIC. 06:16
+So ASIC stands for Application Specific Integrated Circuit. 06:19
+It has a fixed logic, just designed for a certain application. 06:24
+For example deep learning. 06:27
+And Google's TPU is a kind of ASIC and the neural networks we train on, the earlier GPUs is here. 06:29
+And another slide for Hardware 101 is the number representations. 06:37
+So in this slide, I'm going to convey you the idea that all the numbers in computer are not represented by a real number. 06:43
+It's not a real number, but they are actually discrete. 06:51
+Even for those floating point with your 32 Bit. 06:54
+Floating point numbers, their resolution is not perfect. 06:57
+It's not continuous, but it's discrete. 07:02
+So for example FP32, meaning using a 32 bit to represent a floating point number. 07:06
+So there are three components in the representation. 07:12
+The sign bit, the exponent bit, the mantissa, and the number it represents is shown by minus 1 to the S times 1.M times 2 to the exponent. 07:15
+So similar there is FP16, using a 16 bit to represent a floating point number. 07:28
+In particular, I'm going to introduce Int8, where the core TPU use, using an integer to represent a fixed point number. 07:36
+So we have a certain number of bits for the integer. 07:44
+Followed by a radix point, if we put different layers. 07:47
+And lastly, the fractional bits. 07:50
+So why do we prefer those eight bit, or 16 bit rather than those traditional like the 32 bit floating point. 07:54
+That's the cost. 08:03
+So, I generated the figure from 45 nanometer technology about the energy cost versus the area cost for different operations. 08:04
+In particular, let's see here, go you from 32 bit to 16 bit, we have about four times reduction in energy and also about four times reduction in the area. 08:14
+Area means money. 08:28
+Every millimeter square takes money to take out a chip So it's very beneficial for hardware design to go from 32 bit to 16 bit. 08:30
+That's why you hear NVIDIA from Pascal Architecture, they said they're starting to support FP16. 08:41
+That's the reason why it's so beneficial. 08:49
+For example, previous battery level could last four hours, now it becomes 16 hours. 08:53
+That's what it means to reduce the energy cost by four times. 08:58
+But here still, there's a problem of large energy costs for reading the memory. 09:02
+And let's see how can we deal with this memory reference so expensive, how do we deal with this problem better? 09:08
+So let's switch gear and come to our topic directly. 09:16
+So let's first introduce algorithm for efficient inference. 09:19
+So I'm going to cover six topics, this is a really long slide. 09:24
+So I'm going to relatively fast. 09:27
+So the first idea I'm going to talk about is pruning. 09:31
+Pruning the neural networks. 09:34
+For example, this is original neural network. 09:36
+So what I'm trying to do is, can we remove some of the weight and still have the same accuracy? 09:39
+It's like pruning a tree, get rid of those redundant connections. 09:47
+This is first proposed by Professor Yann LeCun back in 1989, and I revisited this problem, 26 years later, on those modern deep neural nets to see how it works. 09:51
+So not all parameters are useful actually. 10:03
+For example, in this case, if you want to fit a single line, but you're using a quadratic term, apparently the 0.01 is a redundant parameter. 10:06
+So I'm going to train the connectivity first and then prune some of the connections. 10:15
+And then train the remaining weights, and through this process, it regulates. 10:20
+And as a result, I can reduce the number of connections, and annex that from 16 million parameters to only six million parameters, which is 10 times less the computation. 10:24
+So this is the accuracy. 10:37
+So the x-axis is how much parameters to prune away and the y-axis is the accuracy you have. 10:42
+So we want to have less parameters, but we also want to have the same accuracy as before. 10:49
+We don't want to sacrifice accuracy, For example at 80%, we locked zero away left 80% of the parameters, but accuracy jumped by 4%. 10:55
+That's intolerable. 11:08
+But the good thing is that if we retrain the remaining weights, the accuracy can fully recover here. 11:10
+And if we do this process iteratively by pruning and retraining, pruning and retraining, we can fully recover the accuracy not until we are prune away 90% of the parameters. 11:18
+So if you go back to home and try it on your Ipad or notebook, just zero away 50% of the parameters say you went on your homework, you will astonishingly find that accuracy actually doesn't hurt. 11:30
+So we just mentioned convolution neural nets, how about RNNs and LSTMs, so I tried with this neural talk. 11:45
+Again, pruning away 90% of the rates doesn't hurt the blue score. 11:52
+And here are some visualizations. 11:58
+For example, the original picture, the neural talk says a basketball player in a white uniform is playing with a ball. 12:00
+Versus pruning away 90% it says, a basketball player in a white uniform is playing with a basketball. 12:08
+And on and so on. 12:16
+But if you're too aggressive, say you prune away 95% of the weights, the network is going to get drunk. 12:19
+It says, a man in a red shirt and white and black shirt is running through a field. 12:28
+So there's really a limit, a threshold, you have to take care of during the pruning. 12:34
+So interestingly, after I did the work, did some resource and research and find actually the same pruning procedure actually happens to human brain as well. 12:41
+So when we were born, there are about 50 trillion synapses in the brain. 12:50
+And at one year old, this number surged into 1,000 trillion. 12:55
+And as we become adolescent, it becomes smaller actually, 500 trillion in the end, according to the study by Nature. 13:00
+So this is very interesting. 13:11
+And also, the pruning changed the weight distribution because we are removing those small connections and after we retrain them, that's why it becomes soft in the end. 13:13
+Yeah, question. 13:23
+- [Student] Are you trying to mean that it terms of your mixed weights during the training will be just set at zero and just start from scratch? 13:25
+And these start from the things that are at zero. 13:32
+- Yeah. 13:35
+So the question is, how do we deal with those zero connections?
+So we force them to be zero in all the other iterations. 13:39
+Question? 13:45
+- [Student] How do you pick which rates to drop? 13:46
+- Yeah so very simple. 13:50
+Small weights, drop it, sort it.
+If it's small, just-- - [Student] Any threshold that I decide? 13:53
+- Exactly, yeah. 13:55
+So the next idea, weight sharing. 13:59
+So now we have, remember our end goal is to remove connections so that we can have less memory footprint so that we can have more energy efficient deployment. 14:01
+Now we have less number of parameters by pruning. 14:12
+We want to have less number of bits per parameter so they're multiplied together they get a small model. 14:15
+So the idea is like this. 14:23
+Not all numbers, not all the weights has to be the exact number. 14:26
+For example, 2.09, 2.12 or all these four weights, you just put them using 2.0 to represent them. 14:30
+That's enough. 14:39
+Otherwise too accurate number is just leads to overfitting. 14:41
+So the idea is I can cluster the weights if they are similar, just using a centroid to represent the number instead of using the full precision weight. 14:46
+So that every time I do the inference, I just do inference on this single number. 14:57
+For example, this is a four by four weight matrix in a certain layer. 15:03
+And what I'm going to do is do k-means clustering by having the similar weight sharing the same centroid. 15:09
+For example, 2.09, 2.12, I store index of three pointing to here. 15:15
+So that, the good thing is we need to only store the two bit index rather than the 32 bit, floating point number. 15:21
+That's 16 times saving. 15:29
+And how do we train such neural network? 15:34
+They are binded together, so after we get the gradient, we color them in the same pattern as the weight and then we do a group by operation by having all the in that weights with the same index grouped together. 15:37
+And then we do a reduction by summing them up. 15:52
+And then multiplied by the learning rate subtracted from the original centroid. 15:56
+That's one iteration of the SGD for such weight shared neural network. 16:00
+So remember previously, after pruning this is what the weight distribution like and after weight sharing, they become discrete. 16:08
+There are only 16 different values here, meaning we can use four bits to represent each number. 16:18
+And by training on such weight shared neural network, training on such extremely shared neural network, these weights can adjust. 16:26
+It is the subtle changes that compensated for the loss of accuracy. 16:34
+So let's see, this is the number of bits we give it, this is the accuracy for convolution layers. 16:41
+Not until four bits, does the accuracy begin to drop and for those fully connected layers, very astonishingly, it's not until two bits, only four number, does the accuracy begins to drop. 16:50
+And this result is per layer. 17:03
+So we have covered two methods, pruning and weight sharing. 17:08
+What if we combine these two methods together. 17:12
+Do they work well? 17:15
+So by combining those methods, this is the compression ratio with the smaller on the left. 17:16
+And this is the accuracy. 17:22
+We can combine it together and make the model about 3% of its original size without hurting the accuracy at all. 17:24
+Compared with the each working individual data by 10%, accuracy begins to drop. 17:33
+And compared with the cheap SVD method, this has a better compression ratio. 17:39
+And final idea is we can apply the Huffman Coding to use more number of bits for those infrequent numbers, infrequently appearing weights and less number of bits for those more frequently appearing weights. 17:46
+So by combining these three methods, pruning, weight sharing, and also Huffman Coding, we can compress the neural networks, state-of-the-art neural networks, ranging from 10x to 49x without hurting the prediction accuracy. 18:03
+Sometimes a little bit better. 18:21
+But maybe that is noise. 18:23
+So the next question is, these models are just pre-trained models by say Google, Microsoft. 18:25
+Can we make a compact model, a pump compact model to begin with? 18:33
+Even before such compression? 18:38
+So SqueezeNet, you may have already worked with this neural network model in a homework. 18:42
+So the idea is we are having a squeeze layer here to shield at the three by three convolution with fewer number of channels. 18:50
+So that's where squeeze comes from. 19:03
+And here we have two branches, rather than four branches as in the inception model. 19:06
+So as a result, the model is extremely compact. 19:13
+It doesn't have any fully connected layers. 19:16
+Everything is fully convolutional. 19:19
+The last layer is a global pooling. 19:20
+So what if we apply deep compression algorithm on such already compact model will it be getting even smaller? 19:27
+So this is AlexNet after compression, this is SqueezeNet. 19:38
+Even before compression, it's 50x smaller than AlexNet, but has the same accuracy. 19:42
+After compression 510x smaller, but the same accuracy only less than half a megabyte. 19:49
+This means it's very easy to fit such a small model on the cache, which is literally tens of megabyte SRAM. 20:00
+So what does it mean? 20:11
+It's possible to achieve speed up. 20:12
+So this is the speedup, I measured if all these fully connected layers only for now, on the CPU, GPU, and the mobile GPU, before pruning and after pruning the weights, and on average, I observed a 3x speedup in a CPU, about 3X speedup on the GPU, and roughly 5x speedup on the mobile GPU, which is a TK1. 20:15
+And so is the energy efficiency. 20:41
+In an average improvement from 3x to 6x on a CPU, GPU, and mobile GPU. 20:44
+And these ideas are used in these companies. 20:52
+Having talked about when pruning and when sharing, which is a non-linear quantization method and we're going to talk about quantization, which is, why do they use in the TPU design? 20:57
+All the TPU designs use at only eight bit for inference. 21:08
+And the way, how they can use that is because of the quantization. 21:12
+And let's see how does it work. 21:16
+So quantization has this complicated figure, but the intuition is very simple. 21:20
+You run the neural network and train it with the normal floating point numbers. 21:26
+And quantize the weight and activations by gather the statistics for each layer. 21:33
+For example, what is the maximum number, minimum number, and how many bits are enough to represent this dynamic range. 21:39
+Then you use that number of bits for the integer part and the rest of the eight bit or seven bit for the other part of the 8 bit representation. 21:47
+And also we can fine tune in the floating point format. 22:00
+Or we can also use feed forward with fixed point and back propagation with update with the floating point number. 22:05
+There are lots of different ideas to have better accuracy. 22:12
+And this is the result, for how many number of bits versus what is the accuracy. 22:17
+For example, using a fixed, 8 bit, the accuracy for GoogleNet doesn't drop significantly. 22:23
+And for VGG-16, it also remains pretty well for the accuracy. 22:28
+While circling down to a six bit, the accuracy begins to drop pretty dramatically. 22:34
+Next idea, low rank approximation. 22:41
+It turned out that for a convolution layer, you can break it into two convolution layers. 22:47
+One convolution here, followed by a one by one convolution. 22:55
+So that it's like you break a complicated problem into two separate small problems. 22:59
+This is for convolution layer. 23:05
+As we can see, achieving about 2x speedup, there's almost no loss of accuracy. 23:07
+And achieving a speedup of 5x, roughly a 6% loss of accuracy. 23:14
+And this also works for fully connected layers. 23:21
+The simplest idea is using the SVD to break it into one matrix into two matrices. 23:24
+And follow this idea, this paper proposes to use the Tensor Tree to break down one fully connected layer into a tree, lots of fully connected layers. 23:30
+That's why it's called a tree. 23:43
+So going even more crazy, can we use only two weights or three weights to represent a neural network? 23:49
+A ternary weight or a binary weight. 23:56
+We already seen this distribution before, after pruning. 23:59
+There's some positive weights and negative weights. 24:02
+Can we just use three numbers, just use one, minus one, zero to represent the neural network. 24:04
+This is our recent paper clear that we maintain a full precision weight during training time, but at inference time, we only keep the scaling factor and the ternary weight. 24:12
+So during inference, we only need three weights. 24:26
+That's very efficient and making the model very small. 24:30
+This is the proportion of the positive zero and negative weights, they can change during the training. 24:35
+So is their absolute value. 24:41
+And this is the visualization of kernels by this trained ternary quantization. 24:46
+We can see some of them are a corner detector like here. 24:53
+And also here. 24:59
+Some of them are maybe edge detector. 25:00
+For example, this filter some of them are corner detector like here this filter. 25:03
+Actually we don't need such fine grain resolution. 25:09
+Just three weights are enough. 25:12
+So this is the validation accuracy on ImageNet with AlexNet. 25:15
+So the threshline is the baseline accuracy with floating point 32. 25:21
+And the red line is our result. 25:26
+Pretty much the same accuracy converged compared with the full precision weights. 25:29
+Last idea, Winograd Transformation. 25:40
+So this about how do we implement deep neural nets, how do we implement the convolutions. 25:44
+So this is the conventional direct convolution implementation method. 25:50
+The slide credited to Julien, a friend from Nvidia. 25:55
+So originally, we just do the element wise do a dot product for those nine elements in the filter and nine elements in the image and then sum it up. 25:58
+For example, for every output we need nine times C number of multiplication and adds. 26:10
+Winograd Convolution is another method, equivalent method. 26:19
+It's not lost, it's an equivalent method proposed at first through this paper, Fast Algorithms for Convolution Neural Networks. 26:27
+That instead of directly doing the convolution, move it one by one, at first it transforms the input feature map to another feature map. 26:35
+Which contains only the weight, contains only 1, 0.5, 2 that can efficiently implement it with shift. 26:47
+And also transform the filter into a four by four tensor. 26:56
+So what we are going to do here is sum over c and do an element-wise element-wise product. 27:02
+So there are only 16 multiplications happening here. 27:08
+And then we do a inverse transform to get four outputs. 27:13
+So the transform and the inverse transform can be amortized and the multiplications, whether it can ignored. 27:18
+So in order to get four output, we need nine times channel times four, which is 36 times channel. 27:24
+Multiplications originally for the direct convolution but now we need 16 times C of our output So that is 2.25x less number of multiplications to perform the exact same multiplication. 27:34
+And here is a speedup. 27:58
+2.25x, so theoretically, 2.25x speedup and in real, from cuDNN 5 they incorporated such Winograd Convolution algorithm. 27:59
+This is on the VGG net I believe, the speedup is roughly 1.7 to 2x speedup. 28:14
+Pretty significant. 28:23
+And after cuDNN 5, the cuDNN begins to use the Winograd Convolution algorithm. 28:27
+Okay, so far we have covered those efficient algorithms for efficient inference. 28:38
+We covered pruning, weight sharing, quantization, and also Winograd binary and ternary. 28:45
+So now let's see what is the optimal hardware for those efficient inference? 28:53
+And what is a Google TPU? 29:00
+So there are a wide range of domain specific architectures or ASICS for deep neural networks. 29:05
+They have a common goal is to minimize the memory access to save power. 29:14
+For example the Eyeriss from MIT by using the RS Dataflow to minimize the off chip direct access. 29:20
+And DaDiannao from China Academy of Science, buffered all the weights on chip DRAM instead of having to go to off-chip DRAM. 29:28
+So the TPU from Google is using eight bit integer to represent the numbers. 29:37
+And at Stanford I proposed the EIE architecture that support those compressed and sparse deep neural network inference. 29:44
+So this is what the TPU looks like. 29:53
+It's actually smartly, can be put into the disk drive up to four cards per server. 29:56
+And this is the high-level architecture for the Google TPU. 30:06
+Don't be overwhelmed, it's actually, the kernel part here, is this giant matrix multiplication unit. 30:12
+So it's a 256 by 256 matrix multiplication unit. 30:23
+So in one single cycle, it can perform 64 kilo those number of multiplication and accumulate operations. 30:28
+So running 700 Megahertz, the throughput is 92 Teraops per second because it's actually integer operation. 30:41
+So we just about 25x as GPU and more than 100x at the CPU. 30:55
+And notice, TPU has a really large software-managed on-chip buffer. 31:01
+It is 24 megabytes. 31:09
+The cache for the CPU the L3 cache is already 16 megabytes. 31:13
+This is 24 megabytes which is pretty large. 31:19
+And it's powered by two DDR3 DRAM channels. 31:24
+So this is a little weak because the bandwidth is only 30 gigabytes per second compared with the most recent GPU that HBM, 900 Gigabytes per second. 31:28
+The DDR4 is released in 2014, so that makes sense because the design is a little during that day, used the DDR3. 31:47
+But if you're using DDR4 or even high-bandwidth memory, the performance can be even boosted. 31:55
+So this is a comparison about Google's TPU compared with the CPU, GPU of this K80 GPU by the way, and the TPU. 32:05
+So the area is pretty much smaller, like half the size of a CPU and GPU and the power consumption is roughly 75 watts. 32:15
+And see this number, the peak teraops per second is much higher than the CPU and GPU is, about 90 teraops per second, which is pretty high. 32:28
+So here is a workload. 32:42
+Thanks to David sharing the slide. 32:44
+This is the workload at Google. 32:47
+They did a benchmark on these TPUs. 32:51
+So it's a little interesting that convolution neural nets only account for 5% of data-center workload. 32:54
+Most of them is multilayer perception, those fully connected layers. 33:03
+About 61% maybe for ads, I'm not sure. 33:08
+And about 29% of the workload in data-center is the Long Short Term Memory. 33:12
+For example, speech recognition, or machine translation, I suspect. 33:18
+Remember just now we have seen there are 90 teraops per second. 33:28
+But what actually number of teraops per second can be achieved? 33:33
+This is a basic tool to measure the bottleneck of a computer system. 33:39
+Whether you are bottlenecked by the arithmetic or you are bottlenecked by the memory bandwidth. 33:45
+It's like if you have a bucket, the lowest part of the bucket determines how much water we can hold in the bucket. 33:53
+So in this region, you are bottlenecked by the memory bandwidth. 34:01
+So the x-axis is the arithmetic intensity. 34:07
+Which is number of floating point operations per byte the ratio between the computation and memory of bandwidth overhead. 34:13
+So the y-axis, is the actual attainable performance. 34:26
+Here is the peak performance for example. 34:32
+When you do a lot of operation after you fetch a single piece of data, if you can do a lot of operation on top of it, then you are bottlenecked by the arithmetic. 34:36
+But after you fetch a lot of data from the memory, but you just do a tiny little bit of arithmetic, then you will be bottlenecked by the memory bandwidth. 34:46
+So how much you can fetch from the memory determines how much real performance you can get. 35:00
+And remember there is a ratio. 35:08
+When it is one here, this region it happens to be the same as the turning point is the actual memory bandwidth of your system. 35:10
+So let's see what is the life for the TPU. 35:21
+The TPU's peak performance is really high, about 90 Tops per second. 35:24
+For those convolution nets, they are pretty much saturating the peak performance. 35:30
+But there are lot of neural networks that has a utlitization less than 10%, meaning that 90 T-ops per second is actually achieves about three to 12 T-ops per second in real case. 35:41
+But why is it like that? 36:03
+The reason is, in order to have those real-time guarantee that the user not wait for too long, you cannot batch a lot of user's images or speech voice data at the same time. 36:05
+So as a result, for those fully connect layers, they have very little reuse, so they are bottlenecked by the memory bandwidth. 36:19
+For those convolution neural nets, for example this one, this blue one, that achieve 86, which is CNN0. 36:31
+The ratio between the ops and the number of memory is the highest. 36:42
+It's pretty high, more than 2,000 compared with other multilayer perceptron or long short term memory the ratio is pretty low. 36:51
+So this figure compares, this is the TPU and this one is the CPU, this is the GPU. 37:04
+Here is memory bandwidth, the peak memory bandwidth at a ratio of one here. 37:13
+So TPU has the highest memory bandwidth. 37:17
+And here is where are these neural networks lie on this curve. 37:20
+So the asterisk is for the TPU. 37:26
+It's still higher than other dots, but if you're not comfortable with this log scale figure, this is what it's like putting it in linear roofline. 37:28
+So pretty much everything disappeared except for the TPU results. 37:43
+So still, all these lines, although they are higher than the CPU and GPU, it's still way below the theoretical peak operations per second. 37:51
+So as I mentioned before, it is really bottlenecked by the low latency requirement so that it can have a large batch size. 38:06
+That's why you have low operations per byte. 38:13
+And how do you solve this problem? 38:16
+You want to have less number of memory footprint so that it can reduce the memory bandwidth requirement. 38:18
+One solution is to compress the model and the challenge is how do we build a hardware that can do inference directly on the compressed model? 38:27
+So I'm going to introduce my design of EIE, the Efficient Inference Engine, which deals with those sparse and the compressed model to save the memory bandwidth. 38:38
+And the rule of thumb, like we mentioned before is taking out one bit of sparsity first. 38:49
+Anything times zero is zero. 38:53
+So don't store it, don't compute on it. 38:56
+And second idea is, you don't need that much full precision, but you can approximate it. 38:59
+So by taking advantage of the sparse weight, we get about a 10x saving in the computation, 5x less memory footprint. 39:06
+The 2x difference is due to index overhead. 39:16
+And by taking advantage of the sparse activation, meaning after bandwidth, if activation is zero, then ignore it. 39:19
+You save another 3x of computation. 39:27
+And then by such weight sharing mechanism, you can use four bits to represent each weight rather than 32 bit. 39:32
+That's another eight times saving in the memory footprint. 39:41
+So this is physically, logically how the weights are stored. 39:48
+A four by eight matrix, and this is how physically they are stored. 39:51
+Only the non-zero weights are stored. 39:57
+So you don't need to store those zeroes. 40:02
+You'll save the bandwidth fetching those zeroes. 40:04
+And also I'm using the relative index to further save the number of memory overhead. 40:07
+So in the computation like this figure shows, we are running the multiplication only on non-zero. 40:21
+If it's zero, then skip it. 40:31
+Only broadcast it to the non-zero weights and if it is zero, skip it. 40:34
+If it's a non-zero, do the multiplication. 40:42
+In another cycle, do the multiplication. 40:45
+So the idea is anything multiplied by zero is zero. 40:48
+So this is a little complicated, I'm going to go very quickly. 40:54
+I'm going to have a lookup table that decode the four bit weight into the 16 bit weight and using the four bit relative index passed through address accumulator to get the 16 bit absolute index. 40:58
+And this is what the hardware architecture like in the high level. 41:11
+You can feel free to refer to my paper for detail. 41:15
+Okay speedup. 41:19
+So using such efficient hardware architecture and also model compression, this is the original result we have seen for CPU, GPU, mobile GPU. 41:21
+Now EIE is here. 41:32
+189 times faster than the CPU and about 13 times faster than the GPU. 41:34
+So this is the energy efficiency on the log scale, it's about 24,000x more energy efficient than a CPU and about 3000x more energy efficient than a GPU. 41:43
+It means for example, previously if your battery can last for one hour, now it can last for 3000 hours for example. 41:55
+So if you say, ASIC is always better than CPUs and GPUs because it's customized hardware. 42:06
+So this is comparing EIE with the peer ASIC, for example DaDianNao and the TrueNorth. 42:12
+It has a better throughput, better energy efficiency by order of magnitude, compared with other ASICs. 42:20
+Not to mention that CPU, GPU and FPGAs. 42:28
+So we have covered half of the journey. 42:33
+We mentioned inference, we pretty much covered everything for inference. 42:37
+Now we are going to switch gear and talk about training. 42:41
+How do we train neural networks efficiently, how do we train it faster? 42:44
+So again, we are starting with algorithm first, efficient algorithms followed by the hardware for efficient training. 42:48
+So for efficient training algorithms, I'm going to mention four topics. 43:00
+The first one is parallelization, and then mixed precision training, which was just released about one month ago and at NVIDIA GTC, so it's fresh knowledge. 43:04
+And then model distillation, followed by my work on Dense-Sparse-Dense training, or better Regularization technique. 43:15
+So let's start with parallelization. 43:22
+So this figure shows, anyone in the hardware community. 43:26
+Most are very familiar with this figure. 43:29
+So as time goes by, what is the trend? 43:31
+For the number of transistors is keeping increasing. 43:35
+But the single threaded performance is getting plateaued in recent years. 43:38
+And also the frequency is getting plateaued in recent years. 43:44
+Because of the power constraint, to stop not scaling. 43:48
+And interesting thing is the number of cores is increasing. 43:52
+So what we really need to do is parallelization. 43:57
+How do we parallelize the problem to take advantage of parallel processing? 44:00
+Actually there are a lot of opportunities for parallelism in deep neural networks. 44:05
+For example, we can do data parallel. 44:12
+For example, feeding two images into the same model and run them at the same time. 44:15
+This doesn't affect latency for a single input. 44:23
+It doesn't make it shorter, but it makes batch size larger basically if you have four machines our effective batch size becomes four times as before. 44:26
+So it requires the coordinated weight update. 44:38
+For example, this is a paper from Google. 44:42
+There is a parameter server as a master and a couple of slaves running their own piece of training data and update the gradient to the parameter server and get the updated weight for them individually, that's how data parallelism is handled. 44:46
+Another idea is there could be a model parallelism. 45:11
+You can sublet your model and handle it to different processors or different threads. 45:14
+For example, there's this image, you want to run convolution on this image that is six dimension for loop. 45:21
+What you can do is you can cut the input image by two by two blocks so that each thread, or each processor handles one fourth of the image. 45:30
+Although there's a small halo here in between you have to take care of. 45:42
+And also, you can parallelize by the output or input feature map. 45:48
+And for those fully connect layers, how do we parallelize the model? 45:54
+It's even simpler. 45:58
+You can cut the model into half and hand it to different threads. 45:59
+And the third idea, you can even do hyper-parameter parallel. 46:06
+For example, you can tune your learning rate, your weight decay for different machines for those coarse-grained parallelism. 46:09
+So there are so many alternatives you have to tune. 46:16
+Small summary of the parallelism. 46:20
+There are lots of parallelisms in deep neural networks. 46:23
+For example, with data parallelism, you can run multiple training images, but you cannot have unlimited number of processors because you are limited by batch size. 46:27
+If it's too large, stochastic gradient descent becomes gradient descent, that's not good. 46:38
+You can also run the model parallelism. 46:44
+Split the model, either by cutting the image or cutting the convolution weights. 46:47
+Either cutting the image or cutting the fully connected layers. 46:58
+So it's very easy to get 16 to 64 GPUs training one model in parallel, having very good speedup. 47:03
+Almost linear speedup. 47:10
+Okay, next interesting thing, mixed precision with FP16 or FP32. 47:13
+So remember in the beginning of this lecture, I had a chart showing the energy and area overhead for a 16 bit versus a 32 bit. 47:21
+Going from 32 bit to 16 bit, you save about 4x the energy and 4x the area. 47:31
+So can we train a deep neural network with such low precision with floating point 16 bit rather than 32 bit? 47:40
+It turns out we can do that partially. 47:47
+By partially, I mean we need FP32 in some places. 47:53
+And where are those places? 47:58
+So we can do the multiplication in 16 bit as input. 48:01
+And then we have to do the summation in 32 bit accumulation. 48:07
+And then convert the result to 32 bit to store the weight. 48:13
+So that's where the mixed precision comes from. 48:18
+So for example, we have a master weight stored in floating point 32, we down converted it to floating point 16 and then we do the feed forward with 16 bit weight, 16 bit activation, we get a 16 bit activation here in the end when we are doing back propagation of the computation is also done with floating point 16 bit. 48:25
+Very interesting here, for the weights we get a floating point 16 bit gradient here for the weight. 48:52
+But when we are doing the update, so W plus learning rate times the gradient, that operation has to be done in 32 bit. 49:03
+That's where the mixed precision is coming from. 49:17
+And see there are two colors, which here is 16 bit, here is the 32 bit. 49:20
+That's where the mixed precision comes from. 49:26
+So does such low precision sacrifice your prediction accuracy for your model? 49:31
+So this is the figure from NVIDIA just released a couple of weeks ago actually. 49:38
+Thanks to Paulius giving me the slide. 49:46
+The convergence between floating point 32 versus the multi tensor up, which is basically the mixed precision training, are actually pretty much the same for convergence. 49:51
+If you zoom it in a little bit, they are pretty much the same. 50:02
+And for ResNet, the mixed precision sometimes behaves a little better than the full precision weight. 50:06
+Maybe because of noise. 50:14
+But in the end, after you train the model, this is the result of AlexNet, Inception V3, and ResNet-50 with FP32 versus FP16 mixed precision training. 50:17
+The accuracy is pretty much the same for these two methods. 50:29
+A little bit worse, but not by too much. 50:33
+So having talked about the mixed precision training, the next idea is to train with model distillation. 50:40
+For example, you can have multiple neural networks, Googlenet, Vggnet, Resnet for example. 50:49
+And the question is, can we take advantage of these different models? 50:55
+Of course we can do model ensemble, can we utilitze them as teacher, to teach a small junior neural network to have it perform as good as the senior neural network. 51:02
+So this is the idea. 51:15
+You have multiple large powerful senior neural networks to teach this student model. 51:17
+And hopefully it can get better results. 51:25
+And the idea to do that is, instead of using this hard label, for example for car, dog, cat, the probability for dog is 100%, but the output of the geometric ensemble of those large teacher neural networks maybe the dog has 90% and the cat is about 10%, and the magic happens here. 51:28
+You want to have a softened result label here. 51:55
+For example, the dog is 30%, the cat is 20%. 51:59
+Still the dog is higher than the cat. 52:03
+So the prediction is still correct, but it uses this soft label to train the student neural network rather than use this hard label to train the student neural network. 52:05
+And mathematically, you control how much do you make it soft by this temperature during the soft max controlling by this temperature. 52:21
+And the result is that, starting with the trained model that classifies 58.9% of the test frames correctly, the new model converges to 57%. 52:34
+Only train on 3% of the data. 52:47
+So that's the magic for model distillation using this soft label. 52:52
+And the last idea is my recent paper using a better regularization to train deep neural nets. 52:59
+We have seen these two figures before. 53:06
+We pruned the neural network, having less number of weights, but have the same accuracy. 53:07
+Now what I did is to recover and to retrain those weights shown in red and make everything train out together to increase the model capacity after it is trained at a low dimensional space. 53:12
+It's like you learn the trunk first and then gradually add those leaves and learn everything together. 53:24
+It turns out, on ImageNet it performs relatively about 1% to 4% absolute improvement of accuracy. 53:31
+And is also general purpose, works on long-short term memory and also recurrent neural nets collaborated with Baidu. 53:41
+So I also open sourced this special training model on the DSD Model Zoo, where there are trained, all these models, GoogleNet, VGG, ResNet, and also SqueezeNet, and also AlexNet. 53:49
+So if you are interested, feel free to check out this Model Zoo and compare it with the Caffe Model Zoo. 54:01
+Here's some examples on dense-spare-dense training helps with image capture. 54:11
+For example, this is a very challenging figure. 54:17
+The original baseline of neural talk says a boy in a red shirt is climbing a rock wall. 54:21
+And the sparse model says a young girl is jumping off a tree, probably mistaking the hair with either the rock or the tree. 54:27
+But then sparse-dense training by using this kind of regularization on a low dimensional space, it says a young girl in a pink shirt is swinging on a swing. 54:33
+And there are a lot of examples due to the limit of time, I will not go over them one by one. 54:42
+For example, a group of people are standing in front of a building, there's no building. 54:49
+A group of people are walking in the park. 54:53
+Feel free to check out the paper and see more interesting results. 54:55
+Okay finally, we come to hardware for efficient training. 55:01
+How to we take advantage of the algorithms we just mentioned. 55:06
+For example, parallelism, mixed precision, how are the hardware designed to actually take advantage of such features. 55:10
+First GPUs, this is the Nvidia PASCAL GPU, GP100, which was released last year. 55:21
+So it supports up to 20 Teraflops on FP16. 55:32
+It has 16 gigabytes of high bandwidth memory. 55:38
+750 gigabytes per second. 55:40
+So remember, computation and memory bandwidth are the two factors determines your overall performance. 55:46
+Whichever is lower, it will suffer. 55:53
+So this is a really high bandwidth, 700 gigabytes compared with DDR3 is just 10 or 30 gigabytes per second. 55:57
+Consumes 300 Watts and it's done in 16 nanometer process and have a 160 gigabytes per second NV Link. 56:08
+So remember we have computation, we have memory, and the third thing is the communication. 56:22
+All three factors has to be balanced in order to achieve a good performance. 56:28
+So this is very powerful, but even more exciting, just about a month ago, Jensen released the newest architecture called the Volta GPUs. 56:35
+And let's see what is inside the Volta GPU. 56:48
+Just released less than a month ago, so it has 15 of FP32 teraflops and what is new here, there is 120 Tensor T-OPS, so specifically designed for deep learning. 56:50
+And we'll later cover what is the tensor core. 57:08
+And what is this 120 coming from. 57:11
+And rather than 750 gigabytes per second, this year, the HBM2, they are using 900 gigabytes per second memory bandwidth. 57:16
+Very exciting. 57:25
+And 12 nanometer process has a die size of more than 800 millimeters square. 57:27
+A really large chip and supported by 300 gigabytes per second NVLink. 57:33
+So what's new in Volta, the most interesting thing for us for deep learning, is this thing called Tensor Core. 57:40
+So what is a Tensor Core? 57:49
+Tensor Core is actually an instruction that can do the four by four matrix times a four by four matrix. 57:51
+The fused FMA stands Fused Multiplication and Add in this mixed precision operation. 58:00
+Just in one single clock cycle. 58:08
+So let's discern for a little bit what does this mean. 58:12
+So mixed precision is exactly as we mentioned in the last chapter, so we are having FP16 for the multiplication, but for accumulation, we are doing it with FP32. 58:15
+That's where the mixed precision comes from. 58:31
+So let's say how many operations, if it's four by four by four, it's 64 multiplications then just in one single cycle. 58:35
+That's 12x increase in the speedup of the Volta compared with the Pascal, which is released just less year. 58:45
+So this is the result for matrix multiplication on different sizes. 58:55
+The speedup of Volta over Pascal is roughly 3x faster doing these matrix multiplications. 59:01
+What we care more is not only matrix multiplication but actually running the deep neural nets. 59:13
+So both for training and for inference. 59:19
+And for training on ResNet-50, by taking advantage of this Tensor Core in this V100, it is 2.4x faster than the P100 using FP32. 59:23
+So on the right hand side, it compares the inference speedup, given a 7 microsecond latency requirement. 59:38
+What is the number of images per second it can process? 59:50
+It has a measurement of throughput. 59:53
+Again, the V100 over P100, by taking advantage of the Tensor Core, is 3.7 faster than the P100. 59:56
+So this figure gives roughly an idea, what is a Tensor Core, what is an integer unit, what is a floating point unit. 60:13
+So this whole figure is a single SM stream multiprocessor. 60:22
+So SM is partitioned into four processing blocks. 60:35
+One, two, three, four, right? 60:39
+And in each block there are eight FP64 cores here and 16 FP32 and 16 INT32 cores here, units here. 60:41
+And then there are two of the new mixed precision Tensor cores specifically designed for deep learning. 60:55
+And also there are the one warp scheduler, dispatch unit and Register File, as before. 61:07
+So what is new here is the Tensor core unit here. 61:13
+So here is a figure comparing the recent generations of Nvidia GPUs from Kepler to Maxwell to Pascal to Volta. 61:18
+We can see everything is keeping improving. 61:34
+For example, the boost clock has been increased from about 800 MHz to 1.4 GHz. 61:37
+And from the Volta generation there begins to have the Tensor core units here, which has never existed before. 61:46
+And before the Maxwell, the GPUs are using the GDDR5, and after the Pascal GPU, the HBM begins to came into place, the high-bandwidth memory. 61:59
+750 gigabytes per second here. 62:14
+900 gigabytes per second compared with DDR3, 30 gigabytes per second. 62:18
+And memory size actually didn't increase by too much, and the power consumption is actually also remaining roughly the same. 62:27
+But giving the increase of computation, you can fit them in the fixed power envelope that's still an exciting thing. 62:38
+And the manufacturing process is actually improving from 28 nanometer, 16 nanometer, all the way to 12 nanometer. 62:46
+And the chip area are also increasing to 800 millimeter-squared, that's really huge. 62:55
+So, you may be interested in the comparison of the GPU with the TPU, right? 63:03
+So how do they compare with each other? 63:09
+So in the original TPU paper, TPU actually designed roughly in the year of 2015, and this is comparison of the Pascal P40 GPU released in 2016. 63:12
+So, TPU, the power consumption is lower, is larger on chip memory of 24 megabytes, really large on-chip SRAM managed by the software. 63:27
+And then both of them support INT8 operations, while the inferences per second given a 10 nanometer latency the comparison for TPU is 1X. 63:38
+For the P40 it's about 2X. 63:50
+So, just last week, in the Google I/O, a new nuclear bomb is landed on the Earth. 63:57
+That is the Google Cloud TPU. 64:06
+So now TPU not only support inference, but also support training. 64:09
+So there is a very limited information we can get beyond this Google Blog. 64:15
+So their Cloud TPU delivers up to 180 teraflops to train and run machine learning models. 64:20
+And this is multiple Cloud TPU, making it into a TPU pod, which is built with 16 the second generation TPUs and delivers up to 11.5 teraflops of machine learning acceleration. 64:33
+So in the Google Blog, they mentioned that one of the large scale translation models, Google translation models, used to take a full day to train on 32 of best commercially-available GPUs, probably P40 or P100, maybe. 64:50
+And now it trains to the same accuracy, just within one afternoon, with just 1/8 of a TPU pod, which is pretty exciting. 65:08
+Okay, so as a little wrap-up. 65:22
+We covered a lot of stuff, we've mentioned the four dimension space of algorithm and hardware, inference and training, we covered the algorithms for inference, for example, pruning and quantization, Winograd Convolution, binary, ternary, weight sharing, for example. 65:25
+And then the hardware for the efficient inference. 65:42
+For example, the TPU, that take advantage of INT8, integer 8. 65:44
+And also my design of EIE accelerator that take advantage of the sparsity, anything multiplied by zero is zero, so don't store it, don't compute on it. 65:52
+And also the efficient algorithm for training, for example, how do we do parallelization and the most recent research on how do we use mixed precision training by taking advantage of FP16 rather than FP32 to do training which is four times saving the energy and four times saving in the area, which doesn't quite sacrifice the accuracy you'll get from the training. 66:04
+And also Dense-Sparse-Dense training using better regularization sparse regularization, and also the teacher-student model. 66:31
+You have multiple teacher on your network and have a small student network that you can distill the knowledge from the teacher in your network by a temperature. 66:41
+And finally we covered the hardware for efficient training and introduced two nuclear bombs. 66:51
+One is the Volta GPU, the other is the TPU version two, the Cloud TPU and also the amazing Tensor cores in the newest generation of Nvidia GPUs. 66:57
+And we also revealed the progression of a wide range, the recent Nvidia GPUs from the Kepler K40, that's actually when I started my research, what we used in the beginning, all the way to and then K40, M40, and then Pascal and then finally the exciting Volta GPU. 67:12
+So every year there is a nuclear bomb in the spring. 67:33
+Okay, a little look ahead in the future. 67:40
+So in the future of the city we can imagine there are a lot of AI applications using smart society, smart care, IOT devices, smart retail, for example, the Amazon Go, and also smart home, a lot of scenarios. 67:44
+And it poses a lot of challenges on the hardware design that requires the low latency, privacy, mobility and energy efficiency. 67:59
+You don't want your battery to drain very quickly. 68:09
+So it's both challenging and very exciting era for the code design for both the machine learning deep neural network model architectures and also the hardware architecture. 68:12
+So we have moved from PC era to mobile era. 68:23
+Now we are in the AI-First era, and hope you are as excited as I am for this kind of brain-inspired cognitive computing research. 68:26
+Thank you for your attention, I'm glad to take questions. 68:37
+[applause] We have five minutes. 68:41
+Of course. 68:54
+- [Student] Can you commercialize the deep architecture? 68:55
+- The architecture, yeah, some of the ideas are pretty good. 68:59
+I think there's opportunity. 69:04
+Yeah. 69:06
+Yeah. 69:11
+The question is, what can we do to make the hardware better? 69:30
+Oh, right, the question is how do we, the challenges and what opportunity for those small embedded devices around deep neural network or in general AI algorithms. 69:46
+Yeah, so those are the algorithm I discussed in the beginning about inference. 69:57
+Here. 70:06
+These are the techniques that can enable such inference or AI running on embedded devices, by having less number of weights, fewer bits per weight, and also quantization, low rank approximation. 70:08
+The small matrix, same accuracy, even going to binary, or ternary weights having just two bits to do the computation rather than 16 or even 32 bit and also the Winograd Transformation. 70:20
+Those are also the enabling algorithms for those low-power embedded devices. 70:33
+Okay, the question is, if it's binary weight, the software developers may be not able to take advantage of it. 70:57
+There is a way to take advantage of binary weight. 71:07
+So in one register there are 32 bit. 71:11
+Now you can think of it as a 32-way parallelism. 71:16
+Each bit is a single operation. 71:19
+So say previously we have 10 ops per second. 71:22
+Now you get 330 ops per second. 71:25
+You can do this bitwise operations. 71:31
+For example, XOR operations. 71:34
+So one register file, one operation becomes 32 operation. 71:37
+So there is a paper called XORmad, they very amazing implemented on the Raspberry Pi using this feature to do real-time detection, very cool stuff. 71:43
+Yeah. 71:55
+Yeah, so the trade-off is always so the power area and performance in general, all the hardware design have to take into account the performance, the power, and also the area. 72:11
+When machine learning comes, there's a fourth figure of merit which is the accuracy. 72:26
+What is the accuracy? 72:32
+And there is a fifth one which is programmability. 72:34
+So how general is your hardware? 72:37
+For example, if Google just want to use that for AI and deep learning, it's totally fine that we can have a fully very specialized architecture just for deep learning to support convolution, multi-layered perception, long-short-term memory, but GPUS, you also want to have support for those scientific computing or graphics, AR and VR. 72:39
+So that's a difference, first of all. 73:04
+And TPU basically is a ASIC, right? 73:10
+It's a very fixed function but you can still program it with those coarse instructions so people from Google roughly designed those coarse granularity instruction. 73:14
+For example, one instruction just load the matrix, store a matrix, do convolutions, do matrix multiplications. 73:24
+Those coarse-grain instructions and they have a software-managed memory, also called a scratchpad. 73:31
+It's different from cache where it determines where to evict something from the cache, but now, since you know the computation pattern, there's no need to do out-of-order execution, to do branch prediction, no such things. 73:40
+Everything is determined, so you can take the multi of it and maintain a fully software-managed scratchpad to reduce the data movement and remember, data movement is the key for reducing the memory footprint and energy consumption. 73:57
+So, yeah. 74:14
+Mobilia and Nobana architectures actually I'm not quite familiar, didn't prepare those slides, so, comment it a little bit later, no. 74:26
+Oh, yeah, of course. 74:52
+Those are always and can certainly be applied to low-power embedded devices. 74:54
+If you're interested, I can show you a... 75:00
+Whoops. 75:04
+Some examples of, oops. 75:06
+Where is that? 75:10
+Of my previous projects running deep neural nets. 75:11
+For example, on a drone, this is using a Nvidia TK1 mobile GPU to do real-time tracking and detection. 75:15
+This is me playing my nunchaku. 75:26
+Filmed by a drone to do the detection and tracking. 75:28
+And also, this FPGA doing the deep neural network. 75:34
+It's pretty small. 75:38
+This large, doing the face-alignment and detecting the eyes, the nose and the mouth, at a pretty high framerate. 75:41
+Consuming only three watts. 75:53
+This is a project I did at Facebook doing the deep neural nets on the mobile phone to do image classification, for example, it says it's a laptop, or you can feed it with an image and it says it's a selfie, has person and the face, et cetera. 75:56
+So there's lots of opportunity for those embedded or mobile-deployment of deep neural nets. 76:14
+No, there is a team doing that, but I cannot comment too much, probably. 76:30
+There is a team at Google doing that sort of stuff, yeah. 76:34
+Okay, thanks, everyone. 76:44
+If you have any questions, feel free to drop me a e-mail. 76:46

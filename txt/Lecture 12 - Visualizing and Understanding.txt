@@ -1,0 +1,798 @@
+Lecture 12 - Visualizing and Understanding
+
+Good morning. 00:10
+So, it's so, I want to get started. 00:12
+Welcome to Lecture 12, of CS-231N. 00:15
+Today we are going to talk about Visualizing and Understanding convolutional networks. 00:18
+This is always a super fun lecture to give because we get to look a lot of pretty pictures. 00:21
+So, it's, it's one of my favorites. 00:25
+As usual a couple administrative things. 00:28
+So, hopefully your projects are all going well, because as a reminder your milestones are due on Canvas tonight. 00:30
+It is Canvas, right? 00:36
+Okay, so want to double check, yeah. 00:38
+Due on Canvas tonight, we are working on furiously grading your midterms. 00:39
+So, we'll hope to have those midterms grades to you back by on grade scope this week. 00:43
+So, I know that was little confusion, you all got registration email's for grade scope probably in the last week. 00:49
+Something like that, we start couple of questions on piazo. 00:54
+So, we've decided to use grade scope to grade the midterms. 00:57
+So, don't be confused, if you get some emails about that. 00:59
+Another reminder is that assignment three was released last week on Friday. 01:02
+It will be due, a week from this Friday, on the 26th. 01:07
+This is, an assignment three, is almost entirely brand new this year. 01:11
+So, it we apologize for taking a little bit longer than expected to get it out. 01:14
+But I think it's super cool. 01:18
+A lot of that stuff, we'll talk about in today's lecture. 01:20
+You'll actually be implementing on your assignment. 01:22
+And for the assignment, you'll get the choice of either Pi torch or tensure flow. 01:25
+To work through these different examples. 01:29
+So, we hope that's really useful experience for you guys. 01:30
+We also saw a lot of activity on HyperQuest over the weekend. 01:34
+So that's, that's really awesome. 01:37
+The leader board went up yesterday. 01:39
+It seems like you guys are really trying to battle it out to show off your deep learning neural network training skills. 01:40
+So that's super cool. 01:46
+And we because due to the high interest in HyperQuest and due to the conflicts with the, with the Milestones submission time. 01:47
+We decided to extend the deadline for extra credit through Sunday. 01:55
+So, anyone who does at least 12 runs on HyperQuest by Sunday will get little bit of extra credit in the class. 01:58
+Also those of you who are, at the top of leader board doing really well, will get may be little bit extra, extra credit. 02:04
+So, I thanks for participating we got lot of interest and that was really cool. 02:11
+Final reminder is about the poster session. 02:15
+So, we have the poster session will be on June 6th. 02:17
+That date is finalized, I think that, I don't remember the exact time. 02:21
+But it is June 6th. 02:24
+So that, we have some questions about when exactly that poster session is for those of you who are traveling at the end of quarter or starting internships or something like that. 02:25
+So, it will be June 6th. 02:33
+Any questions on the admin notes. 02:35
+No, totally clear. 02:39
+So, last time we talked. 02:41
+So, last time we had a pretty jam packed lecture, when we talked about lot of different computer vision tasks, as a reminder. 02:42
+We talked about semantic segmentation which is this problem, where you want to sign labels to every pixel in the input image. 02:48
+But does not differentiate the object instances in those images. 02:54
+We talked about classification plus localization. 02:58
+Where in addition to a class label you also want to draw a box or perhaps several boxes in the image. 03:00
+Where the distinction here is that, in a classification plus localization setup. 03:06
+You have some fix number of objects that you are looking for So, we also saw that this type of paradigm can be applied to the things like pose recognition. 03:10
+Where you want to regress to different numbers of joints in the human body. 03:16
+We also talked about the object detection where you start with some fixed set of category labels that you are interested in. 03:20
+Like dogs and cats. 03:25
+And then the task is to draw a boxes around every instance of those objects that appear in the input image. 03:27
+And object detection is really distinct from classification plus localization because with object detection, we don't know ahead of time, how many object instances we're looking for in the image. 03:32
+And we saw that there's this whole family of methods based on RCNN, Fast RCNN and faster RCNN, as well as the single shot detection methods for addressing this problem of object detection. 03:42
+Then finally we talked pretty briefly about instance segmentation, which is kind of combining aspects of a semantic segmentation and object detection where the goal is to detect all the instances of the categories we care about, as well as label the pixels belonging to each instance. 03:52
+So, in this case, we detected two dogs and one cat and for each of those instances we wanted to label all the pixels. 04:07
+So, these are we kind of covered a lot last lecture but those are really interesting and exciting problems that you guys might consider to using in parts of your projects. 04:14
+But today we are going to shift gears a little bit and ask another question. 04:23
+Which is, what's really going on inside convolutional networks. 04:27
+We've seen by this point in the class how to train convolutional networks. 04:30
+How to stitch up different types of architectures to attack different problems. 04:34
+But one question that you might have had in your mind, is what exactly is going on inside these networks? 04:37
+How did they do the things that they do? 04:42
+What kinds of features are they looking for? 04:44
+And all this source of related questions. 04:46
+So, so far we've sort of seen ConvNets as a little bit of a black box. 04:48
+Where some input image of raw pixels is coming in on one side. 04:53
+It goes to the many layers of convulsion and pooling in different sorts of transformations. 04:57
+And on the outside, we end up with some set of class scores or some types of understandable interpretable output. 05:01
+Such as class scores or bounding box positions or labeled pixels or something like that. 05:07
+But the question is. 05:12
+What are all these other layers in the middle doing? 05:13
+What kinds of things in the input image are they looking for? 05:15
+And can we try again intuition for. 05:18
+How ConvNets are working? 05:20
+What types of things in the image they are looking for? 05:22
+And what kinds of techniques do we have for analyzing this internals of the network? 05:24
+So, one relatively simple thing is the first layer. 05:29
+So, we've seen, we've talked about this before. 05:32
+But recalled that, the first convolutional layer consists of a filters that, so, for example in AlexNet. 05:34
+The first convolutional layer consists of a number of convolutional filters. 05:41
+Each convolutional of filter has shape 3 by 11 by 11. 05:45
+And these convolutional filters gets slid over the input image. 05:49
+We take inner products between some chunk of the image. 05:52
+And the weights of the convolutional filter. 05:54
+And that gives us our output of the at, at after that first convolutional layer. 05:56
+So, in AlexNet then we have 64 of these filters. 06:01
+But now in the first layer because we are taking in a direct inner product between the weights of the convolutional layer and the pixels of the image. 06:05
+We can get some since for what these filters are looking for by simply visualizing the learned weights of these filters as images themselves. 06:11
+So, for each of those 11 by 11 by 3 filters in AlexNet, we can just visualize that filter as a little 11 by 11 image with a three channels give you the red, green and blue values. 06:19
+And then because there are 64 of these filters we just visualize 64 little 11 by 11 images. 06:30
+And we can repeat... 06:35
+So we have shown here at the.
+So, these are filters taken from the prechain models, in the pi torch model zoo. 06:38
+And we are looking at the convolutional filters. 06:42
+The weights of the convolutional filters. 06:44
+at the first layer of AlexNet, ResNet-18, ResNet-101 and DenseNet-121. 06:45
+And you can see, kind of what all these layers what this filters looking for. 06:51
+You see the lot of things looking for oriented edges. 06:55
+Likes bars of light and dark. 06:59
+At various angles, in various angles and various positions in the input, we can see opposing colors. 07:01
+Like this are green and pink. 07:07
+opposing colors or this orange and blue opposing colors. 07:09
+So, this, this kind of connects back to what we talked about with Hugh and Wiesel. 07:12
+All the way in the first lecture. 07:16
+That remember the human visual system is known to the detect things like oriented edges. 07:17
+At the very early layers of the human visual system. 07:22
+And it turns out of that these convolutional networks tend to do something, somewhat similar. 07:24
+At their first convolutional layers as well. 07:29
+And what's kind of interesting is that pretty much no matter what type of architecture you hook up or whatever type of training data you are train it on. 07:31
+You almost always get the first layers of your. 07:37
+The first convolutional weights of any pretty much any convolutional network looking at images. 07:40
+Ends up looking something like this with oriented edges and opposing colors. 07:44
+Looking at that input image. 07:48
+But this really only, sorry what was that question? 07:51
+Yes, these are showing the learned weights of the first convolutional layer. 08:04
+Oh, so that the question is. 08:15
+Why does visualizing the weights of the filters? 08:16
+Tell you what the filter is looking for. 08:18
+So this intuition comes from sort of template matching and inner products. 08:21
+That if you imagine you have some, some template vector. 08:25
+And then you imagine you compute a scaler output by taking inner product between your template vector and some arbitrary piece of data. 08:28
+Then, the input which maximizes that activation. 08:35
+Under a norm constraint on the input is exactly when those two vectors match up. 08:38
+So, in that since that, when, whenever you're taking inner products, the thing causes an inner product to excite maximally is a copy of the thing you are taking an inner product with. 08:43
+So, that, that's why we can actually visualize these weights and that, why that shows us, what this first layer is looking for. 08:52
+So, for these networks the first layers always was a convolutional layer. 09:06
+So, generally whenever you are looking at image. 09:10
+Whenever you are thinking about image data and training convolutional networks, you generally put a convolutional layer at the first, at the first stop. 09:12
+Yeah, so the question is, can we do this same type of procedure in the middle open network. 09:28
+That's actually the next slide. 09:32
+So, good anticipation. 09:33
+So, if we do, if we draw this exact same visualization for the intermediate convolutional layers. 09:35
+It's actually a lot less interpretable. 09:39
+So, this is, this is performing exact same visualization. 09:41
+So, remember for this using the tiny ConvNets demo network that's running on the course website whenever you go there. 09:45
+So, for that network, the first layer is 7 by 7 convulsion 16 filters. 09:51
+So, after the top visualizing the first layer weights for this network just like we saw in a previous slide. 09:55
+But now at the second layer weights. 10:00
+After we do a convulsion then there's some relu and some other non-linearity perhaps. 10:02
+But the second convolutional layer, now receives the 16 channel input. 10:06
+And does 7 by 7 convulsion with 20 convolutional filters. 10:10
+And we've actually, so the problem is that you can't really visualize these directly as images. 10:15
+So, you can try, so, here if you this 16 by, so the input is this has 16 dimensions in depth. 10:20
+And we have these convolutional filters, each convolutional filter is 7 by 7, and is extending along the full depth so has 16 elements. 10:28
+Then we've 20 such of these convolutional filters, that are producing the output planes of the next layer. 10:35
+But the problem here is that we can't, looking at the, looking directly at the weights of these filters, doesn't really tell us much. 10:40
+So, we, that's really done here is that, now for this single 16 by 7 by 7 convolutional filter. 10:47
+We can spread out those 167 by 7 planes of the filter into a 167 by 7 grayscale images. 10:53
+So, that's what we've done. 11:01
+Up here, which is these little tiny gray scale images here show us what is, what are the weights in one of the convolutional filters of the second layer. 11:03
+And now, because there are 20 outputs from this layer. 11:11
+Then this second convolutional layer, has 2o such of these 16 by 16 or 16 by 7 by 7 filters. 11:14
+So if we visualize the weights of those convolutional filters as images, you can see that there are some kind of spacial structures here. 11:21
+But it doesn't really give you good intuition for what they are looking at. 11:28
+Because these filters are not looking, are not connected directly to the input image. 11:32
+Instead recall that the second layer convolutional filters are connected to the output of the first layer. 11:36
+So, this is giving visualization of, what type of activation pattern after the first convulsion, would cause the second layer convulsion to maximally activate. 11:41
+But, that's not very interpretable because we don't have a good sense for what those first layer convulsions look like in terms of image pixels. 11:50
+So we'll need to develop some slightly more fancy technique to get a sense for what is going on in the intermediate layers. 11:58
+Question in the back. 12:03
+Yeah. 12:09
+So the question is that for...
+all the visualization on this on the previous slide.
+We've had the scale the weights to the zero to 255 range. 12:13
+So in practice those weights could be unbounded. 12:16
+They could have any range. 12:18
+But to get nice visualizations we need to scale those. 12:19
+These visualizations also do not take in to account the bias is in these layers. 12:22
+So you should keep that in mind when and not take these HEPS visualizations to, to literally. 12:26
+Now at the last layer remember when we looking at the last layer of convolutional network. 12:34
+We have these maybe 1000 class scores that are telling us what are the predicted scores for each of the classes in our training data set and immediately before the last layer we often have some fully connected layer. 12:38
+In the case of Alex net we have some 4096- dimensional features representation of our image that then gets fed into that final our final layer to predict our final class scores. 12:48
+And one another, another kind of route for tackling the problem of visual, visualizing and understanding ConvNets is to try to understand what's happening at the last layer of a convolutional network. 12:58
+So what we can do is how to take some, some data set of images run a bunch of, run a bunch of images through our trained convolutional network and recorded that 4096 dimensional vector for each of those images. 13:07
+And now go through and try to figure out and visualize that last layer, that last hidden layer rather than those rather than the first convolutional layer. 13:18
+So, one thing you might imagine is, is trying a nearest neighbor approach. 13:26
+So, remember, way back in the second lecture we saw this graphic on the left where we, where we had a nearest neighbor classifier. 13:29
+Where we were looking at nearest neighbors in pixels space between CIFAR 10 images. 13:36
+And then when you look at nearest neighbors in pixel space between CIFAR 10 images you see that you pull up images that looks quite similar to the query image. 13:40
+So again on the left column here is some CIFAR 10 image from the CIFAR 10 data set and then these, these next five columns are showing the nearest neighbors in pixel space to those test set images. 13:48
+And so for example this white dog that you see here, it's nearest neighbors are in pixel space are these kinds of white blobby things that may, may or may not be dogs, but at least the raw pixels of the image are quite similar. 13:58
+So now we can do the same type of visualization computing and visualizing these nearest neighbor images. 14:11
+But rather than computing the nearest neighbors in pixel space, instead we can compute nearest neighbors in that 4096 dimensional feature space. 14:16
+Which is computed by the convolutional network. 14:24
+So here on the right we see some examples. 14:27
+So this, this first column shows us some examples of images from the test set of image that... 14:29
+Of the image net classification data set and now the, these subsequent columns show us nearest neighbors to those test set images in the 4096, in the 4096th dimensional features space computed by Alex net.
+And you can see here that this is quite different from the pixel space nearest neighbors, because the pixels are often quite different. 14:48
+between the image in it's nearest neighbors and feature space. 14:55
+However, the semantic content of those images tends to be similar in this feature space. 14:58
+So for example, if you look at this second layer the query image is this elephant standing on the left side of the image with a screen grass behind him. 15:03
+and now one of these, one of these... 15:10
+it's third nearest neighbor in the tough set is actually an elephant standing on the right side of the image. 15:12
+So this is really interesting. 15:17
+Because between this elephant standing on the left and this element stand, elephant standing on the right the pixels between those two images are almost entirely different. 15:18
+However, in the feature space which is learned by the network those two images and that being very close to each other. 15:26
+Which means that somehow this, this last their features is capturing some of those semantic content of these images. 15:32
+That's really cool and really exciting and, and in general looking at these kind of nearest neighbor visualizations is really quick and easy way to visualize something about what's going on here. 15:37
+Yes. 16:02
+So the question is that through the...
+the standard supervised learning procedure for classific training, classification network There's nothing in the loss encouraging these features to be close together.
+So that, that's true. 16:13
+It just kind of a happy accident that they end up being close to each other. 16:15
+Because we didn't tell the network during training these features should be close. 16:18
+However there are sometimes people do train networks using things called either contrastive loss or a triplet loss. 16:21
+Which actually explicitly make... 16:28
+assumptions and constraints on the network such that those last their features end up having some metric space interpretation. 16:31
+But Alex net at least was not trained specifically for that. 16:37
+The question is, what is the nearest... 16:44
+What is this nearest neighbor thing have to do at the last layer? 16:46
+So we're taking this image we're running it through the network and then the, the second to last like the last hidden layer of the network is of 4096th dimensional vector. 16:48
+Because there's this, this is... 16:57
+This is there, there are these fully connected layers at the end of the network. 16:58
+So we are doing is... 17:01
+We're writing down that 4096th dimensional vector for each of the images and then we are computing nearest neighbors according to that 4096th dimensional vector. 17:03
+Which is computed by, computed by the network. 17:10
+Maybe, maybe we can chat offline. 17:17
+So another, another, another another angle that we might have for visualizing what's going on in this last layer is by some concept of dimensionality reduction. 17:19
+So those of you who have taken CS229 for example you've seen something like PCA. 17:28
+Which let's you take some high dimensional representation like these 4096th dimensional features and then compress it down to two-dimensions. 17:33
+So then you can visualize that feature space more directly. 17:39
+So, Principle Component Analysis or PCA is kind of one way to do that. 17:43
+But there's real another really powerful algorithm called t-SNE. 17:47
+Standing for t-distributed stochastic neighbor embeddings. 17:51
+Which is slightly more powerful method. 17:54
+Which is a non-linear dimensionality reduction method that people in deep often use for visualizing features. 17:57
+So here as an, just an example of what t-SNE can do. 18:03
+This visualization here is, is showing a t-SNE dimensionality reduction on the emnest data set. 18:07
+So, emnest remember is this date set of hand written digits between zero and nine. 18:13
+Each image is a gray scale image 20... 18:17
+28 by 28 gray scale image and now we're...
+So that Now we've, we've used t-SNE to take that 28 times 28 dimensional features space of the raw pixels for m-nest and now compress it down to two- dimensions ans then visualize each of those m-nest digits in this compress two-dimensional representation and when you do, when you run t-SNE on the raw pixels and m-nest You can see these natural clusters appearing.
+Which corresponds to the, the digits of these m-nest of, of these m-nest data set. 18:42
+So now we can do a similar type of visualization. 18:47
+Where we apply this t-SNE dimensionality reduction technique to the features from the last layer of our trained image net classifier. 18:49
+So...To be a little bit more concrete here what we've done is that we take, a large set of images we run them off convolutional network. 18:57
+We record that final 4096th dimensional feature vector for, from the last layer of each of those images. 19:05
+Which gives us large collection of 4096th dimensional vectors. 19:10
+Now we apply t-SNE dimensionality reduction to compute, sort of compress that 4096the dimensional features space down into a two-dimensional feature space and now we, layout a grid in that compressed two-dimensional feature space and visualize what types of images appear at each location in the grid in this two-dimensional feature space. 19:14
+So by doing this you get some very close rough sense of what the geometry of this learned feature space looks like. 19:36
+So these images are little bit hard to see. 19:43
+So I'd encourage you to check out the high resolution versions online. 19:45
+But at least maybe on the left you can see that there's sort of one cluster in the bottom here of, of green things, is a different kind of flowers and there's other types of clusters for different types of dog breeds and another types of animals and, and locations. 19:48
+So there's sort of discontinuous semantic notion in this feature space. 20:01
+Which we can explore by looking through this t-SNE dimensionality reduction version of the, of the features. 20:06
+Is there question? 20:11
+Yeah. 20:23
+So the basic idea is that we're we, we have an image so now we end up with three different pieces of information about each image.
+We have the pixels of the image. 20:29
+We have the 4096th dimensional vector. 20:31
+Then we use t-SNE to convert the 4096th dimensional vector into a two-dimensional coordinate and then we take the original pixels of the image and place that at the two-dimensional coordinate corresponding to the dimensionality reduced version of the 4096th dimensional feature. 20:33
+Yeah, little bit involved here. 20:48
+Question in the front. 20:49
+The question is Roughly how much variants do these two-dimension explain? 20:55
+Well, I'm not sure of the exact number and I get little bit muddy when you're talking about t-SNE, because it's a non-linear dimensionality reduction technique. 20:59
+So, I'd have to look offline and I'm not sure of exactly how much it explains. 21:06
+Question? 21:10
+Question is, can you do the same analysis of upper layers of the network? 21:14
+And yes, you can. 21:17
+But no, I don't have those visualizations here.
+Sorry.
+Question? 21:21
+The question is, Shouldn't we have overlaps of images once we do this dimensionality reduction? 21:35
+And yes, of course, you would. 21:39
+So this is just kind of taking a, nearest neighbor in our, in our regular grid and then picking an image close to that grid point. 21:40
+So, so... 21:47
+they, yeah.
+this is not showing you the kind of density in different parts of the feature space. 21:49
+So that's, that's another thing to look at and again at the link you, there's a couple more visualizations of this nature that, that address that a little bit. 21:54
+Okay. 22:03
+So another, another thing that you can do for some of these intermediate features is, so we talked a couple of slides ago that visualizing the weights of these intermediate layers is not so interpretable.
+But actually visualizing the activation maps of those intermediate layers is kind of interpretable in some cases. 22:13
+So for, so I, again an example of Alex Net. 22:20
+Remember the, the conv5 layers of Alex Net. 22:24
+Gives us this 128 by... 22:26
+The for...The conv5 features for any image is now 128 by 13 by 13 dimensional tensor. 22:28
+But we can think of that as 128 different 13 by 132-D grids. 22:35
+So now we can actually go and visualize each of those 13 by 13 elements slices of the feature map as a grayscale image and this gives us some sense for what types of things in the input are each of those features in that convolutional layer looking for. 22:42
+So this is a, a really cool interactive tool by Jason Yasenski you can just download. 22:58
+So it's run, so I don't have the video, it has a video on his website. 23:03
+But it's running a convolutional network on the inputs stream of webcam and then visualizing in real time each of those slices of that intermediate feature map give you a sense of what it's looking for and you can see that, so here the input image is this, this picture up in, settings... 23:06
+of this picture of a person in front of the camera and most of these intermediate features are kind of noisy, not much going on. 23:21
+But there's a, but there's this one highlighted intermediate feature where that is also shown larger here that seems that it's activating on the portions of the feature map corresponding to the person's face. 23:28
+Which is really interesting and that kind of, suggests that maybe this, this particular slice of the feature map of this layer of this particular network is maybe looking for human faces or something like that. 23:39
+Which is kind of a nice, kind of a nice and cool finding. 23:51
+Question? 23:54
+The question is, Are the black activations dead relu's? 23:59
+So you got to be... 24:02
+a little careful with terminology.
+We usually say dead relu to mean something that's dead over the entire training data set. 24:04
+Here I would say that it's a relu, that, it's not active for this particular input. 24:09
+Question? 24:14
+The question is, If there's no humans in image net how can it recognize a human face? 24:19
+There definitely are humans in image net I don't think it's, it's one of the cat... 24:22
+I don't think it's one of the thousand categories for the classification challenge. 24:26
+But people definitely appear in a lot of these images and that can be useful signal for detecting other types of things. 24:29
+So that's actually kind of nice results because that shows that, it's sort of can learn features that are useful for the classification task at hand. 24:34
+That are even maybe a little bit different from the explicit classification task that we told it to perform. 24:41
+So it's actually really cool results. 24:45
+Okay, question? 24:50
+So at each layer in the convolutional network our input image is of three, it's like 3 by 224 by 224 and then it goes through many stages of convolution. 24:55
+And then, it, after each convolutional layer is some three dimensional chunk of numbers. 25:03
+Which are the outputs from that layer of the convolutional network. 25:07
+And that into the entire three dimensional chunk of numbers which are the output of the previous convolutional layer, we call, we call, like an activation volume and then one of those, one of those slices is a, it's an activation map. 25:10
+So the question is, If the image is K by K will the activation map be K by K? 25:34
+Not always because there can be sub sampling due to pool, straight convolution and pooling. 25:38
+But in general, the, the size of each activation map will be linear in the size of the input image. 25:42
+So another, another kind of useful thing we can do for visualizing intermediate features is... 25:50
+Visualizing what types of patches from input images cause maximal activation in different, different features, different neurons. 25:55
+So what we've done here is that, we pick... 26:03
+Maybe again the con five layer from Alex Net? 26:06
+And remember each of these activation volumes at the con, at the con five in Alex net gives us a 128 by 13 by 13 chunk of numbers. 26:08
+Then we'll pick one of those 128 channels. 26:15
+Maybe channel 17 and now what we'll do is run many images through this convolutional network. 26:17
+And then, for each of those images record the con five features and then look at the... 26:23
+Right, so, then, then look at the, the... 26:30
+The parts of that 17th feature map that are maximally activated over our data set of images. 26:32
+And now, because again this is a convolutional layer each of those neurons in the convolutional layer has some small receptive field in the input. 26:37
+Each of those neurons is not looking at the whole image. 26:45
+They're only looking at the sub set of the image. 26:47
+Then what we'll do is, is visualize the patches from the, from this large data set of images corresponding to the maximal activations of that, of that feature, of that particular feature in that particular layer. 26:49
+And then we can sorts these out, sort these patches by their activation at that, at that particular layer. 27:00
+So here is a, some examples from this... 27:06
+Network called a, fully... 27:09
+The network doesn't matter. 27:11
+But these are some visualizations of these kind of maximally activating patches. 27:12
+So, each, each row gives... 27:16
+We've chosen one layer from or one neuron from one layer of a network and then each, and then, the, they're sorted of these are the patches from some large data set of images. 27:18
+That maximally activated this one neuron. 27:28
+And these can give you a sense for what type of features these, these neurons might be looking for. 27:30
+So for example, this top row we see a lot of circly kinds of things in the image. 27:35
+Some eyes, some, mostly eyes. 27:39
+But also this, kind of blue circly region. 27:42
+So then, maybe this, this particular neuron in this particular layer of this network is looking for kind of blue circly things in the input. 27:44
+Or maybe in the middle here we have neurons that are looking for text in different colors or, or maybe curving, curving edges of different colors and orientations. 27:51
+Yeah, so, I've been a little bit loose with terminology here. 28:06
+So, I'm saying that a neuron is one scaler value in that con five activation map. 28:09
+But because it's convolutional, all the neurons in one channel are all using the same weights. 28:13
+So we've chosen one channel and then, right? 28:19
+So, you get a lot of neurons for each convolutional filter at any one layer. 28:22
+So, we, we could have been, so this patches could've been drawn from anywhere in the image due to the convolutional nature of the thing. 28:26
+And now at the bottom we also see some maximally activating patches for neurons from a higher up layer in the same network. 28:32
+And now because they are coming from higher in the network they have a larger receptive field. 28:38
+So, they're looking at larger patches of the input image and we can also see that they're looking for maybe larger structures in the input image. 28:42
+So this, this second row is maybe looking, it seems to be looking for human, humans or maybe human faces. 28:49
+We have maybe something looking for... 28:56
+Parts of cameras or different types of larger, larger, larger object like type things, types of things. 28:59
+Another, another cool experiment we can do which comes from Zeiler and Fergus ECCV 2014 paper. 29:06
+is this idea of an exclusion experiment. 29:11
+So, what we want to do is figure out which parts of the input, of the input image cause the network to make it's classification decision. 29:14
+So, what we'll do is, we'll take our input image in this case an elephant and then we'll block out some part of that, some region in that input image and just replace it with the mean pixel value from the data set. 29:21
+And now, run that occluded image throughout, through the network and then record what is the predicted probability of this occluded image? 29:32
+And now slide this occluded patch over every position in the input image and then repeat the same process. 29:39
+And then draw this heat map showing, what was the predicted probability output from the network as a function of where did, which part of the input image did we occlude? 29:44
+And the idea is that if when we block out some part of the image if that causes the network score to change drastically. 29:53
+Then probably that part of the input image was really important for the classification decision. 29:59
+So here we've shown... 30:04
+I've shown three different examples of... 30:06
+Of this occlusion type experiment. 30:09
+So, maybe this example of a Go-kart at the bottom, you can see over here that when we, so here, red, the, the red corresponds to a low probability and the white and yellow corresponds to a high probability. 30:11
+So when we block out the region of the image corresponding to this Go-kart in front. 30:23
+Then the predicted probability for the Go-kart class drops a lot. 30:27
+So that gives us some sense that the network is actually caring a lot about these, these pixels in the input image in order to make it's classification decision. 30:30
+Question? 30:38
+Yes, the question is that, what's going on in the background? 30:47
+So maybe if the image is a little bit too small to tell but, there's, this is actually a Go-kart track and there's a couple other Go-karts in the background. 30:49
+So I think that, when you're blocking out these other Go-karts in the background, that's also influencing the score or maybe like the horizon is there and maybe the horizon is an useful feature for detecting Go-karts, it's a little bit hard to tell sometimes. 30:56
+But this is a pretty cool visualization. 31:07
+Yeah, was there another question? 31:08
+So the question is, sorry, sorry, what was the first question? 31:20
+So, the, so the question... 31:30
+So for, for this example we're taking one image and then masking all parts of one image. 31:32
+The second question was, how is this useful? 31:36
+It's not, maybe, you don't really take this information and then loop it directly into the training process. 31:38
+Instead, this is a way, a tool for humans to understand, what types of computations these train networks are doing. 31:42
+So it's more for your understanding than for improving performance per se. 31:49
+So another, another related idea is this concept of a Saliency Map. 31:54
+Which is something that you will see in your homeworks. 31:57
+So again, we have the same question of given an input image of a dog in this case and the predicted class label of dog we want to know which pixels in the input image are important for classification. 32:00
+We saw masking, is one way to get at this question. 32:11
+But Saliency Maps are another, another, angle for attacking this problem. 32:14
+And the question is, and one relatively simple idea from Karen Simonenian's paper, a couple years ago. 32:19
+Is, this is just computing the gradient of the predicted class score with respect to the pixels of the input image. 32:25
+And this will directly tell us in this sort of, first order approximation sense. 32:31
+For each input, for each pixel in the input image if we wiggle that pixel a little bit then how much will the classification score for the class change? 32:36
+And this is another way to get at this question of which pixels in the input matter for the classification. 32:43
+And when we, and when we run for example Saliency, where computer Saliency map for this dog, we see kind of a nice outline of a dog in the image. 32:50
+Which tells us that these are probably the pixels of that, network is actually looking at, for this image. 32:59
+And when we repeat this type of process for different images, we get some sense that the network is sort of looking at the right regions. 33:04
+Which is somewhat comforting. 33:11
+Question? 33:13
+The question is, do people use Saliency Maps for semantic segmentation? 33:17
+The answer is yes.
+That actually was... 33:21
+Yeah, you guys are like really on top of it this lecture. 33:23
+So that was another component, again in Karen's paper. 33:26
+Where there's this idea that maybe you can use these Saliency Maps to perform semantic segmentation without direct, without any labeled data for the, for these, for these segments. 33:29
+So here they're using this Grabcut Segmentation Algorithm which I don't really want to get into the details of. 33:38
+But it's kind of an interactive segmentation algorithm that you can use. 33:43
+So then when you combine this Saliency Map with this Grabcut Segmentation Algorithm then you can in fact, sometimes segment out the object in the image. 33:47
+Which is really cool. 33:55
+However I'd like to point out that this is a little bit brittle and in general if you, this will probably work much, much, much, worse than a network which did have access to supervision and training time. 33:57
+So, I don't, I'm not sure how, how practical this is. 34:07
+But it is pretty cool that it works at all. 34:10
+But it probably works much less than something trained explicitly to segment with supervision. 34:13
+So kind of another, another related idea is this idea of, of guided back propagation. 34:19
+So again, we still want to answer the question of for one particular, for one particular image. 34:23
+Then now instead of looking at the class score we want to know, we want to pick some intermediate neuron in the network and ask again, which parts of the input image influence the score of that neuron, that internal neuron in the network. 34:30
+And, and then you could imagine, again you could imagine computing a Saliency Map for this again, right? 34:44
+That rather than computing the gradient of the class scores with respect to the pixels of the image. 34:49
+You could compute the gradient of some intermediate value in the network with respect to the pixels of the image. 34:53
+And that would tell us again which parts, which pixels in the input image influence that value of that particular neuron. 34:58
+And that would be using normal back propagation. 35:05
+But it turns out that there is a slight tweak that we can do to this back propagation procedure that ends up giving some slightly cleaner images. 35:08
+So that's this idea of guided back propagation that again comes from Zeiler and Fergus's 2014 paper. 35:15
+And I don't really want to get into the details too much here but, it, you just, it's kind of weird tweak where you change the way that you back propagate through relu non-linearities. 35:21
+And you sort of, only, only back propagate positive gradients through relu's and you do not back propagate negative gradients through the relu's. 35:30
+So you're no longer computing the true gradient instead you're kind of only keeping track of positive influences on throughout the entire network. 35:37
+So maybe you should read through these, these papers reference to your, if you want a little bit more details about why that's a good idea. 35:46
+But empirically, when you do guided back propagation as appose to regular back propagation. 35:53
+You tend to get much cleaner, nicer images. 35:59
+that tells you, which part, which pixel of the input image influence that particular neuron. 36:01
+So, again we were seeing the same visualization we saw a few slides ago of the maximally activating patches. 36:07
+But now, in addition to visualizing these maximally activating patches. 36:16
+We've also performed guided back propagation, to tell us exactly which parts of these patches influence the score of that neuron. 36:20
+So, remember for this example at the top, we saw that, we thought this neuron is may be looking for circly tight things, in the input patch because there're allot of circly tight patches. 36:27
+Well, when we look at guided back propagation We can see with that intuition is somewhat confirmed because it is indeed the circly parts of that input patch which are influencing that, that neuron value. 36:37
+So, this is kind of a useful to all for synthesizing. 36:49
+For understanding what these different intermediates are looking for. 36:52
+But, one kind of interesting thing about guided back propagation or computing saliency maps. 36:56
+Is that there's always a function of fixed input image, right, they're telling us for a fixed input image, which pixel or which parts of that input image influence the value of the neuron. 37:01
+Another question you might answer is is remove this reliance, on that, on some input image. 37:12
+And then instead just ask what type of input in general would cause this neuron to activate and we can answer this question using a technical Gradient ascent so, remember we always use Gradient decent to train our convolutional networks by minimizing the loss. 37:19
+Instead now, we want to fix the, fix the weight of our trained convolutional network and instead synthesizing image by performing Gradient ascent on the pixels of the image to try and maximize the score of some intermediate neuron or of some class. 37:34
+So, in a process of Gradient ascent, we're no longer optimizing over the weights of the network those weights remained fixed instead we're trying to change pixels of some input image to cause this neuron, or this neuron value, or this class score to maximally, to be maximized but, instead but, in addition we need some regularization term so, remember we always a, we before seeing regularization terms to try to prevent the network weights from over fitting to the training data. 37:50
+Now, we need something kind of similar to prevent the pixels of our generated image from over fitting to the peculiarities of that particular network. 38:19
+So, here we'll often incorporate some regularization term that, we're kind of, we want a generated image of two properties one, we wanted to maximally activate some, some score or some neuron value. 38:27
+But, we also wanted to look like a natural image. 38:39
+we wanted to kind of have, the kind of statistics that we typically see in natural images. 38:42
+So, these regularization term in the subjective is something to enforce a generated image to look relatively natural. 38:46
+And we'll see a couple of different examples of regualizers as we go through. 38:52
+But, the general strategy for this is actually pretty simple and again informant allot of things of this nature on your assignment three. 38:57
+But, what we'll do is start with some initial image either initializing to zeros or to uniform or noise. 39:04
+But, initialize your image in some way and I'll repeat where you forward your image through 3D network and compute the score or, or neuron value that you're interested. 39:10
+Now, back propagate to compute the Gradient of that neuron score with respect to the pixels of the image and then make a small Gradient ascent or Gradient ascent update to the pixels of the images itself. 39:19
+To try and maximize that score. 39:32
+And I'll repeat this process over and over again, until you have a beautiful image. 39:33
+And, then we talked, we talked about the image regularizer, well a very simple, a very simple idea for image regularizer is simply to penalize L2 norm of a generated image This is not so semantically meaningful, it's just does something, and this was one of the, one of the earliest regularizer that we've seen in the literature for these type of generating images type of papers. 39:38
+And, when you run this on a trained network you can see that now we're trying to generate images that maximize the dumble score in the upper left hand corner here for example. 40:01
+And, then you can see that the synthesized image, it been, it's little bit hard to see may be but there're allot of different dumble like shapes, all kind of super impose that different portions of the image. 40:12
+or if we try to generate an image for cups then we can may be see a bunch of different cups all kind of super imposed the Dalmatian is pretty cool, because now we can see kind of this black and white spotted pattern that's kind of characteristics of Dalmatians or for lemons we can see these different kinds of yellow splotches in the image. 40:23
+And there's a couple of more examples here, I think may be the goose is kind of cool or the kitfox are actually may be looks like kitfox. 40:40
+Question? 40:46
+The question is, why are these all rainbow colored and in general getting true colors out of this visualization is pretty tricky. 40:55
+Right, because any, any actual image will be bounded in the range zero to 255. 41:02
+So, it really should be some kind of constrained optimization problem But, if, for using this generic methods for Gradient ascent then we, that's going to be unconstrained problem. 41:06
+So, you may be use like projector Gradient ascent algorithm or your rescaled image at the end. 41:15
+So, the colors that you see in this visualizations, sometimes are you cannot take them too seriously. 41:21
+Question? 41:27
+The question is what happens, if you let the thing loose and don't put any regularizer on it. 41:32
+Well, then you tend to get an image which maximize the score which is confidently classified as the class you wanted but, usually it doesn't look like anything. 41:36
+It kind of look likes random noise. 41:46
+So, that's kind of an interesting property in itself that will go into much more detail in a future lecture. 41:48
+But, that's why, that kind of doesn't help you so much for understanding what things the network is looking for. 41:54
+So, if we want to understand, why the network thing makes its decisions then it's kind of useful to put regularizer on there to generate an image to look more natural. 42:00
+A question in the back. 42:09
+Yeah, so the question is that we see a lot of multi modality here, and other ways to combat that. 42:34
+And actually yes, we'll see that, this is kind of first step in the whole line of work in improving these visualizations. 42:38
+So, another, another kind of, so then the angle here is a kind of to improve the regularizer to improve our visualized images. 42:44
+And there's a another paper from Jason Yesenski and some of his collaborators where they added some additional impressive regularizers. 42:51
+So, in addition to this L2 norm constraint, in addition we also periodically during optimization, and do some gauche and blurring on the image, we're also clip some,. 42:58
+some small value, some small pixel values all the way to zero, we're also clip some of the, some of the pixel values of low Gradients to zero So, you can see this is kind of a projector Gradient ascent algorithm where it reach periodically we're projecting our generated image onto some nicer set of images with some nicer properties. 43:07
+For example, special smoothness with respect to the gauchian blurring So, when you do this, you tend to get much nicer images that are much clear to see. 43:24
+So, now these flamingos look like flamingos the ground beetle is starting to look more beetle like or this black swan maybe looks like a black swan. 43:32
+These billiard tables actually look kind of impressive now, where you can definitely see this billiard table structure. 43:41
+So, you can see that once you add in nicer regularizers, then the generated images become a bit, a little bit cleaner. 43:48
+And, now we can perform this procedure not only for the final class course, but also for these intermediate neurons as well. 43:55
+So, instead of trying to maximize our billiard table score for example instead we can get maximize one of the neurons from some intermediate layer Question. 44:01
+So, the question is what's with the for example here, so those who remember initializing our image randomly so, these four images would be different random initialization of the input image. 44:16
+And again, we can use these same type of procedure to visualize, to synthesis images which maximally activate intermediate neurons of the network. 44:28
+And, then you can get a sense from some of these intermediate neurons are looking for, so may be at layer four there's neuron that's kind of looking for spirally things or there's neuron that's may be looking for like chunks of caterpillars it's a little bit harder to tell. 44:36
+But, in generally as you go larger up in the image then you can see that the one, the obviously receptive fields of these neurons are larger. 44:49
+So, you're looking at the larger patches in the image. 44:56
+And they tend to be looking for may be larger structures or more complex patterns in the input image. 44:58
+That's pretty cool. 45:03
+And, then people have really gone crazy with this and trying to, they basically improve these visualization by keeping on extra features So, this was a cool paper kind of explicitly trying to address this multi modality, there's someone asked question about a few minutes ago. 45:07
+So, here they were trying to explicitly take a count, take this multi modality into account in the optimization procedure where they did indeed, I think see the initial, so they for each of the classes, you run a clustering algorithm to try to separate the classes into different modes and then initialize with something that is close to one of those modes. 45:23
+And, then when you do that, you kind of account for this multi modality. 45:42
+so for intuition, on the right here these eight images are all of grocery stores. 45:45
+But, the top row, is kind of close up pictures of produce on the shelf and those are labeled as grocery stores And the bottom row kind of shows people walking around grocery stores or at the checkout line or something like that. 45:51
+And, those are also labeled those as grocery store, but their visual appearance is quiet different. 46:04
+So, a lot of these classes and that being sort multi modal And, if you can take, and if you explicitly take this more time mortality into account when generating images, then you can get nicer results. 46:08
+And now, then when you look at some of their example, synthesis images for classes, you can see like the bell pepper, the card on, strawberries, jackolantern now they end up with some very beautifully generated images. 46:17
+And now, I don't want to get to much into detail of the next slide. 46:31
+But, then you can even go crazier. 46:35
+and add an even stronger image prior and generate some very beautiful images indeed So, these are all synthesized images that are trying to maximize the class score or some image in a class. 46:38
+But, the general idea is that rather than optimizing directly the pixels of the input image, instead they're trying to optimize the FC6 representation of that image instead. 46:48
+And now they need to use some feature inversion network and I don't want to get into the details here. 46:59
+You should read the paper, it's actually really cool But, the point is that, when you start adding additional priors towards modeling natural images and you can end generating some quiet realistic images they gave you some sense of what the network is looking for So, that's, that's sort of one cool thing that we can do with this strategy, but this idea of trying to synthesis images by using Gradients on image pixels, is actually super powerful. 47:03
+And, another really cool thing we can do with this, is this concept of fooling image So, what we can do is pick some arbitrary image, and then try to maximize the, so, say we take it picture of an elephant and then we tell the network that we want to, change the image to maximize the score of Koala bear instead So, then what we were doing is trying to change that image of an elephant to try and instead cause the network to classify as a Koala bear. 47:29
+And, what you might hope for is that, maybe that elephant was sort of thought more thing into a Koala bear and maybe he would sprout little cute ears or something like that. 47:57
+But, that's not what happens in practice, which is pretty surprising. 48:05
+Instead if you take this picture of a elephant and tell them that, tell them that and try to change the elephant image to instead cause it to be classified as a koala bear What you'll find is that, you is that this second image on the right actually is classified as koala bear but it looks the same to us. 48:09
+So that's pretty fishy and pretty surprising. 48:24
+So also on the bottom we've taken this picture of a boat. 48:28
+Schooner is the image in that class and then we told the network to classified as an iPod. 48:32
+So now the second example looks just, still looks like a boat to us but the network thinks it's an iPod and the difference is in pixels between these two images are basically nothing. 48:37
+And if you magnify those differences you don't really see any iPod or Koala like features on these differences, they're just kind of like random patterns of noise. 48:46
+So the question is what's going here? 48:54
+And like how can this possibly the case? 48:56
+Well, we'll have a guest lecture from Ian Goodfellow in a week an half two weeks. 48:58
+And he's going to go in much more detail about this type of phenomenon and that will be really exciting. 49:03
+But I did want to mention it here because it is on your homework. 49:08
+Question? 49:11
+Yeah, so that's something, so the question is can we use fooled images as training data and I think, Ian's going to go in much more detail on all of these types of strategies. 49:16
+Because that's literally, that's really a whole lecture onto itself. 49:22
+Question? 49:27
+The question is why do we care about any of this stuff? 50:00
+Basically... 50:03
+Okay, maybe that was a mischaracterization, I am sorry. 50:06
+Yeah, the question is what is have in the... 50:24
+understanding this intermediate neurons how does that help our understanding of the final classification. 50:27
+So this is actually, this whole field of trying to visualize intermediates is kind of in response to a common criticism of deep learning. 50:32
+So a common criticism of deep learning is like, you've got this big black box network you trained it on gradient ascent, you get a good number and that's great but we don't trust the network because we don't understand as people why it's making the decisions, that's it's making. 50:38
+So a lot of these type of visualization techniques were developed to try and address that and try to understand as people why the network are making their various classification, classification decisions a bit more. 50:51
+Because if you contrast, if you contrast a deep convolutional neural network with other machine running techniques. 51:01
+Like linear models are much easier to interpret in general because you can look at the weights and kind of understand the interpretation between how much each input feature effect the decision or if you look at something like a random forest or decision tree. 51:07
+Some other machine learning models end up being a bit more interpretable just by their very nature then this sort of black box convolutional networks. 51:19
+So a lot of this is sort of in response to that criticism to say that, yes they are these large complex models but they are still doing some interesting and interpretable things under the hood. 51:27
+They are not just totally going out in randomly classifying things. 51:37
+They are doing something meaningful So another cool thing we can do with this gradient based optimization of images is this idea of DeepDream. 51:40
+So this was a really cool blog post that came out from Google a year or two ago. 51:50
+And the idea is that, this is, so we talked about scientific value, this is almost entirely for fun. 51:55
+So the point of this exercise is mostly to generate cool images. 52:00
+And aside, you also get some sense for what features images are looking at. 52:04
+Or these networks are looking at. 52:08
+So we can do is, we take our input image we run it through the convolutional network up to some layer and now we back propagate and set the gradient of that, at that layer equal to the activation value. 52:10
+And now back propagate, back to the image and update the image and repeat, repeat, repeat. 52:20
+So this has the interpretation of trying to amplify existing features that were detected by the network in this image. 52:25
+Right?
+Because whatever features existed on that layer now we set the gradient equal to the feature and we just tell the network to amplify whatever features you already saw in that image. 52:31
+And by the way you can also see this as trying to maximize the L2 norm of the features at that layer of the image. 52:40
+And it turns... 52:46
+And when you do this the code ends up looking really simple.
+So your code for many of your homework assignments will probably be about this complex or maybe even a little bit a less so. 52:50
+So the idea is that... 52:55
+But there's a couple of tricks here that you'll also see in your assignments. 52:57
+So one trick is to jitter the image before you compute your gradients. 53:00
+So rather than running the exact image through the network instead you'll shift the image over by two pixels and kind of wrap the other two pixels over here. 53:04
+And this is a kind of regularizer to prevent each of these [mumbling] it regularizers a little bit to encourage a little bit of extra special smoothness in the image. 53:11
+You also see they use L1 normalization of the gradients that's kind of a useful trick sometimes when doing this image generation problems. 53:19
+You also see them clipping the pixel values once in a while. 53:26
+So again we talked about images actually should be between zero to 2.55 so this is a kind of projected gradients decent where we project on to the space of actual valid images. 53:29
+But now when we do all this then we start, we might start with some image of a sky and then we get really cool results like this. 53:39
+So you can see that now we've taken these tiny features on the sky and they get amplified through this, through this process. 53:46
+And we can see things like this different mutant animals start to pop up or these kind of spiral shapes pop up. 53:52
+Different kinds of houses and cars pop up. 53:59
+So that's all, that's all pretty interesting. 54:01
+There's a couple patterns in particular that pop up all the time that people have named. 54:04
+Right, so there's this Admiral dog, that shows up allot. 54:08
+There's the pig snail, the camel bird this the dog fish. 54:12
+Right, so these are kind of interesting, but actually this fact that dog show up so much in these visualization, actually does tell us something about the data on which this network was trained. 54:16
+Right, because this is a network that was trained for image net classification, image that have thousand categories. 54:26
+But 200 of those categories are dogs. 54:30
+So, so it's kind of not surprising in a sense that when you do these kind of visualizations then network ends up hallucinating a lot of dog like stuff in the image often morphed with other types of animals. 54:32
+When you do this other layers of the network you get other types of results. 54:44
+So here we're taking one of these lower layers in the network, the previous example was relatively high up in the network and now again we have this interpretation that lower layers maybe computing edges and swirls and stuff like that and that's kind of borne out when we running DeepDream at a lower layer. 54:47
+Or if you run this thing for a long time and maybe add in some multiscale processing you can get some really, really crazy images. 55:01
+Right, so here they're doing a kind of multiscale processing where they start with a small image run DeepDream on the small image then make it bigger and continue DeepDream on the larger image and kind of repeat with this multiscale processing and then you can get, and then maybe after you complete the final scale then you restart from the beginning and you just go wild on this thing. 55:08
+And you can get some really crazy images. 55:25
+So these examples were all from networks trained on image net There's another data set from MIT called MIT Places Data set but instead of 1,000 categories of objects instead it's 200 different types of scenes like bedrooms and kitchens like stuff like that. 55:28
+And now if we repeat this DeepDream procedure using an network trained at MIT places. 55:42
+We get some really cool visualization as well. 55:48
+So now instead of dogs, slugs and admiral dogs and that's kind of stuff, instead we often get these kind of roof shapes of these kind of Japanese style building or these different types of bridges or mountain ranges. 55:50
+They're like really, really cool beautiful visualizations. 56:02
+So the code for DeepDream is online, released by Google you can go check it out and make your own beautiful pictures So there's another kind of... 56:05
+Sorry question? 56:13
+So the question is, what are taking gradient of? 56:24
+So like I say, if you, because like one over x squared on the gradient of that is x. 56:28
+So, if you send back the volume of activation as the gradient, that's equivalent to max, that's equivalent to taking the gradient with respect to the like one over x squared some... 56:33
+Some of the values. 56:42
+So it's equivalent to maximizing the norm of that of the features of that layer. 56:44
+But in practice many implementation you'll see not explicitly compute that instead of send gradient back. 56:49
+So another kind of useful, another kind of useful thing we can do is this concept of feature inversion. 56:56
+So this again gives us a sense for what types of, what types of elements of the image are captured at different layers of the network. 57:01
+So what we're going to do now is we're going to take an image, run that image through network record the feature value for one of those images and now we're going to try to reconstruct that image from its feature representation. 57:07
+And the question, and now based on the how much, how much like what that reconstructed image looks like that'll give us some sense for what type of information about the image was captured in that feature vector. 57:20
+So again, we can do this with gradient ascent with some regularizer. 57:31
+Where now rather than maximizing some score instead we want to minimize the distance between this catch feature vector. 57:34
+And between the computed features of our generated image. 57:41
+To try and again synthesize a new image that matches the feature back to that we computed before. 57:44
+And another kind of regularizer that you frequently see here is the total variation regularizer that you also see on your homework. 57:50
+So here with the total variation regularizer is panelizing differences between adjacent pixels on both of the left and adjacent in left and right and adjacent top to bottom. 57:56
+To again try to encourage special smoothness in the generated image. 58:05
+So now if we do this idea of feature inversion so this visualization here on the left we're showing some original image. 58:09
+The elephants or the fruits at the left. 58:16
+And then we run that, we run the image through a VGG-16 network. 58:18
+Record the features of that network at some layer and then try to synthesize a new image that matches the recorded features of that layer. 58:22
+And this is, this kind of give us a sense for what how much information is stored in this images. 58:30
+In these features of different layers. 58:35
+So for example if we try to reconstruct the image based on the relu2_2 features from VGC's, from VGG-16. 58:37
+We see that the image gets almost perfectly reconstructed. 58:43
+Which means that we're not really throwing away much information about the raw pixel values at that layer. 58:46
+But as we move up into the deeper parts of the network and try to reconstruct from relu4_3, relu5_1. 58:52
+We see that our reconstructed image now, we've kind of kept the general space, the general spatial structure of the image. 58:58
+You can still tell that, that it's a elephant or a banana or a, or an apple. 59:05
+But a lot of the low level details aren't exactly what the pixel values were and exactly what the colors were, exactly what the textures were. 59:09
+These are kind of low level details are kind of lost at these higher layers of this network. 59:16
+So that gives us some sense that maybe as we move up through the flairs of the network it's kind of throwing away this low level information about the exact pixels of the image and instead is maybe trying to keep around a little bit more semantic information, it's a little bit invariant for small changes in color and texture and things like that. 59:20
+So we're building towards a style transfer here which is really cool. 59:38
+So in addition to understand style transfer, in addition to feature inversion. 59:42
+We also need to talk about a related problem called texture synthesis. 59:47
+So in texture synthesis, this is kind of an old problem in computer graphics. 59:51
+Here the idea is that we're given some input patch of texture. 59:55
+Something like these little scales here and now we want to build some model and then generate a larger piece of that same texture. 59:58
+So for example, we might here want to generate a large image containing many scales that kind of look like input. 60:05
+And this is again a pretty old problem in computer graphics. 60:12
+There are nearest neighbor approaches to textual synthesis that work pretty well. 60:15
+So, there's no neural networks here. 60:19
+Instead, this kind of a simple algorithm where we march through the generated image one pixel at a time in scan line order. 60:21
+And then copy... 60:27
+And then look at a neighborhood around the current pixel based on the pixels that we've already generated and now compute a nearest neighbor of that neighborhood in the patches of the input image and then copy over one pixel from the input image. 60:28
+So, maybe you don't need to understand the details here just the idea is that there's a lot classical algorithms for texture synthesis, it's a pretty old problem but you can do this without neural networks basically. 60:41
+And when you run this kind of this kind of classical texture synthesis algorithm it actually works reasonably well for simple textures. 60:52
+But as we move to more complex textures these kinds of simple methods of maybe copying pixels from the input patch directly tend not to work so well. 60:59
+So, in 2015, there was a really cool paper that tried to apply neural network features to this problem of texture synthesis. 61:08
+And ended up framing it as kind of a gradient ascent procedure, kind of similar to the feature map, the various feature matching objectives that we've seen already. 61:16
+So, in order to perform neural texture synthesis they use this concept of a gram matrix. 61:24
+So, what we're going to do, is we're going to take our input texture and in this case some pictures of rocks and then take that input texture and pass it through some convolutional neural network and pull out convolutional features at some layer of the network. 61:30
+So, maybe then this convolutional feature volume that we've talked about, might be H by W by C or sorry, C by H by W at that layer of the network. 61:44
+So, you can think of this as an H by W spacial grid. 61:53
+And at each point of the grid, we have this C dimensional feature vector describing the rough appearance of that image at that point. 61:56
+And now, we're going to use this activation map to compute a descriptor of the texture of this input image. 62:04
+So, what we're going to do is take, pick out two of these different feature columns in the input volume. 62:10
+Each of these feature columns will be a C dimensional vector. 62:15
+And now take the outer product between those two vectors to give us a C by C matrix. 62:18
+This C by C matrix now tells us something about the co-occurrence of the different features at those two points in the image. 62:23
+Right, so, if an element, if like element IJ in the C by C matrix is large that means both elements I and J of those two input vectors were large and something like that. 62:30
+So, this somehow captures some second order statistics about which features, in that feature map tend to activate to together at different spacial volumes... 62:40
+At different spacial positions. 62:49
+And now we're going to repeat this procedure using all different pairs of feature vectors from all different points in this H by W grid. 62:51
+Average them all out, and that gives us our C by C gram matrix. 62:58
+And this is then used a descriptor to describe kind of the texture of that input image. 63:01
+So, what's interesting about this gram matrix is that it has now thrown away all spacial information that was in this feature volume. 63:06
+Because we've averaged over all pairs of feature vectors at every point in the image. 63:13
+Instead, it's just capturing the second order co-occurrence statistics between features. 63:17
+And this ends up being a nice descriptor for texture. 63:21
+And by the way, this is really efficient to compute. 63:25
+So, if you have a C by H by W three dimensional tensure you can just reshape it to see times H by W and take that times its own transpose and compute this all in one shot so it's super efficient. 63:27
+But you might be wondering why you don't use an actual covariance matrix or something like that instead of this funny gram matrix and the answer is that using covariance... 63:39
+Using true covariance matrices also works but it's a little bit more expensive to compute. 63:47
+So, in practice a lot of people just use this gram matrix descriptor. 63:51
+So then... 63:55
+Then there's this...
+Now once we have this sort of neural descriptor of texture then we use a similar type of gradient ascent procedure to synthesize a new image that matches the texture of the original image. 63:56
+So, now this looks kind of like the feature reconstruction that we saw a few slides ago. 64:06
+But instead, I'm trying to reconstruct the whole feature map from the input image. 64:10
+Instead, we're just going to try and reconstruct this gram matrix texture descriptor of the input image instead. 64:15
+So, in practice what this looks like is that well... 64:20
+You'll download some pretrained model, like in feature inversion. 64:23
+Often, people will use the VGG networks for this. 64:25
+You'll feed your... 64:28
+You'll take your texture image, feed it through the VGG network, compute the gram matrix and many different layers of this network.
+Then you'll initialize your new image from some random initialization and then it looks like gradient ascent again. 64:38
+Just like for these other methods that we've seen. 64:45
+So, you take that image, pass it through the same VGG network, Compute the gram matrix at various layers and now compute loss as the L2 norm between the gram matrices of your input texture and your generated image. 64:47
+And then you back prop, and compute pixel... 65:00
+A gradient of the pixels on your generated image. 65:03
+And then make a gradient ascent step to update the pixels of the image a little bit. 65:06
+And now, repeat this process many times, go forward, compute your gram matrices, compute your losses, back prop.. 65:09
+Gradient on the image and repeat. 65:14
+And once you do this, eventually you'll end up generating a texture that matches your input texture quite nicely. 65:17
+So, this was all from Nip's 2015 paper by a group in Germany. 65:22
+And they had some really cool results for texture synthesis. 65:27
+So, here on the top, we're showing four different input textures. 65:30
+And now, on the bottom, we're showing doing this texture synthesis approach by gram matrix matching. 65:33
+Using, by computing the gram matrix at different layers at this pretrained convolutional network. 65:41
+So, you can see that, if we use these very low layers in the convolutional network then we kind of match the general... 65:45
+We generally get splotches of the right colors but the overall spacial structure doesn't get preserved so much. 65:51
+And now, as we move to large down further in the image and you compute these gram matrices at higher layers you see that they tend to reconstruct larger patterns from the input image. 65:56
+For example, these whole rocks or these whole cranberries. 66:06
+And now, this works pretty well that now we can synthesize these new images that kind of match the general spacial statistics of your inputs. 66:10
+But they are quite different pixel wise from the actual input itself. 66:17
+Question? 66:21
+So, the question is, where do we compute the loss? 66:28
+And in practice, we want to get good results typically people will compute gram matrices at many different layers and then the final loss will be a sum of all those potentially a weighted sum. 66:30
+But I think for this visualization, to try to pin point the effect of the different layers I think these were doing reconstruction from just one layer. 66:40
+So, now something really... 66:47
+Then, then they had a really brilliant idea kind of after this paper which is, what if we do this texture synthesis approach but instead of using an image like rocks or cranberries what if we set it equal to a piece of artwork. 66:49
+So then, for example, if you... 67:01
+If you do the same texture synthesis algorithm by maximizing gram matrices, but instead of... 67:03
+But now we take, for example, Vincent Van Gogh's Starry night or the Muse by Picasso as our texture... 67:09
+As our input texture, and then run this same texture synthesis algorithm. 67:14
+Then we can see our generated images tend to reconstruct interesting pieces from those pieces of artwork. 67:19
+And now, something really interesting happens when you combine this idea of texture synthesis by gram matrix matching with feature inversion by feature matching. 67:25
+And then this brings us to this really cool algorithm called style transfer. 67:34
+So, in style transfer, we're going to take two images as input. 67:38
+One, we're going to take a content image that will guide like what type of thing we want. 67:42
+What we generally want our output to look like. 67:47
+Also, a style image that will tell us what is the general texture or style that we want our generated image to have and then we will jointly do feature recon... 67:49
+We will generate a new image by minimizing the feature reconstruction loss of the content image and the gram matrix loss of the style image. 67:57
+And when we do these two things we a get a really cool image that kind of renders the content image kind of in the artistic style of the style image. 68:05
+And now this is really cool. 68:14
+And you can get these really beautiful figures. 68:16
+So again, what this kind of looks like is that you'll take your style image and your content image pass them into your network to compute your gram matrices and your features. 68:18
+Now, you'll initialize your output image with some random noise. 68:26
+Go forward, compute your losses go backward, compute your gradients on the image and repeat this process over and over doing gradient ascent on the pixels of your generated image. 68:29
+And after a few hundred iterations, generally you'll get a beautiful image. 68:38
+So, I have implementation of this online on my Gethub, that a lot of people are using. 68:43
+And it's really cool. 68:47
+So, you can, this is kind of... 68:48
+Gives you a lot more control over the generated image as compared to DeepDream. 68:50
+Right, so in DeepDream, you don't have a lot of control about exactly what types of things are going to happen coming out at the end. 68:54
+You just kind of pick different layers of the networks maybe set different numbers of iterations and then dog slugs pop up everywhere. 69:00
+But with style transfer, you get a lot more fine grain control over what you want the result to look like. 69:06
+Right, by now, picking different style images with the same content image you can generate whole different types of results which is really cool. 69:11
+Also, you can play around with the hyper parameters here. 69:19
+Right, because we're doing a joint reconstruct... 69:21
+We're minimizing this feature reconstruction loss of the content image. 69:23
+And this gram matrix reconstruction loss of the style image. 69:27
+If you trade off the constant, the waiting between those two terms and the loss. 69:30
+Then you can get control about how much we want to match the content versus how much we want to match the style. 69:34
+There's a lot of other hyper parameters you can play with. 69:39
+For example, if you resize the style image before you compute the gram matrix that can give you some control over what the scale of features are that you want to reconstruct from the style image. 69:41
+So, you can see that here, we've done this same reconstruction the only difference is how big was the style image before we computed the gram matrix. 69:52
+And this gives you another axis over which you can control these things. 69:58
+You can also actually do style transfer with multiple style images if you just match sort of multiple gram matrices at the same time. 70:04
+And that's kind of a cool result. 70:11
+We also saw this multi-scale process... 70:13
+So, another cool thing you can do. 70:15
+We talked about this multi-scale processing for DeepDream and saw how multi scale processing in DeepDream can give you some really cool resolution results. 70:17
+And you can do a similar type of multi-scale processing in style transfer as well. 70:25
+So, then we can compute images like this. 70:29
+That a super high resolution, this is I think a 4k image of our favorite school, like rendered in the style of Starry night. 70:32
+But this is actually super expensive to compute. 70:40
+I think this one took four GPU's. 70:42
+So, a little expensive. 70:44
+We can also other style, other style images. 70:47
+And get some really cool results from the same content image. 70:49
+Again, at high resolution. 70:51
+Another fun thing you can do is you know, you can actually do joint style transfer and DeepDream at the same time. 70:53
+So, now we'll have three losses, the content loss the style loss and this... 71:01
+And this DeepDream loss that tries to maximize the norm. 71:05
+And get something like this. 71:09
+So, now it's Van Gogh with the dog slug's coming out everywhere. 71:11
+[laughing] So, that's really cool. 71:14
+But there's kind of a problem with this style transfer for algorithms which is that they are pretty slow. 71:18
+Right, you need to produce... 71:23
+You need to compute a lot of forward and backward passes through your pretrained network in order to complete these images. 71:24
+And especially for these high resolution results that we saw in the previous slide. 71:30
+Each forward and backward pass of a 4k image is going to take a lot of compute and a lot of memory. 71:33
+And if you need to do several hundred of those iterations generating these images could take many, like tons of minutes even on a powerful GPU. 71:38
+So, it's really not so practical to apply these things in practice. 71:46
+The solution is to now, train another neural network to do the style transfer for us. 71:50
+So, I had a paper about this last year and the idea is that we're going to fix some style that we care about at the beginning. 71:54
+In this case, Starry night. 72:01
+And now rather than running a separate optimization procedure for each image that we want to synthesize instead we're going to train a single feed forward network that can input the content image and then directly output the stylized result. 72:03
+And now the way that we train this network is that we compute the same content and style losses during training of our feed forward network and use that same gradient to update the weights of the feed forward network. 72:15
+And now this thing takes maybe a few hours to train but once it's trained, then in order to produce stylized images you just need to do a single forward pass through the trained network. 72:26
+So, I have a code for this online and you can see that it ends up looking about... 72:36
+Relatively comparable quality in some cases to this very slow optimization base method but now it runs in real time it's about a thousand times faster. 72:40
+So, here you can see, this is like a demo of it running live off my webcam. 72:49
+So, this is not running live right now obviously, but if you have a big GPU you can easily run four different styles in real time all simultaneously because it's so efficient. 72:54
+There was... 73:05
+There was another group from Russia that had a very similar out...
+That had a very similar paper concurrently and their results are about as good. 73:08
+They also had this kind of tweek on the algorithm. 73:12
+So, this feed forward network that we're training ends up looking a lot like these... 73:15
+These segmentation models that we saw. 73:20
+So, these segmentation networks, for semantic segmentation we're doing down sampling and then many, and then many layers then some up sampling [mumbling] With transposed convulsion in order to down sample an up sample to be more efficient. 73:22
+The only difference is that this final layer produces a three channel output for the RGB of that final image. 73:37
+And inside this network, we have batch normalization in the various layers. 73:45
+But in this paper, they introduce... 73:48
+They swap out the batch normalization for something else called instance normalization tends to give you much better results. 73:50
+So, one drawback of these types of methods is that we're now training one new style transfer network... 73:56
+For every... 74:02
+For style that we want to apply.
+So that could be expensive if now you need to keep a lot of different trained networks around. 74:05
+So, there was a paper from Google that just came... 74:10
+Pretty recently that addressed this by using one feed forward trained network to apply many different styles to the input image. 74:13
+So now, they can train one network to apply many different styles at test time using one trained network. 74:21
+So, here's it's going to take the content images input as well as the identity of the style you want to apply and then this is using one network to apply many different types of styles. 74:28
+And again, runs in real time. 74:36
+That same algorithm can also do this kind of style blending in real time with one trained network. 74:39
+So now, once you trained this network on these four different styles you can actually specify a blend of these styles to be applied at test time which is really cool. 74:44
+So, these kinds of real time style transfer methods are on various apps and you can see these out in practice a lot now these days. 74:52
+So, kind of the summary of what we've seen today is that we've talked about many different methods for understanding CNN representations. 75:01
+We've talked about some of these activation based methods like nearest neighbor, dimensionality reduction, maximal patches, occlusion images to try to understand based on the activation values of what the features are looking for. 75:08
+We also talked about a bunch of gradient based methods where you can use gradients to synthesize new images to understand your features such as saliency maps class visualizations, fooling images, feature inversion. 75:18
+And we also had fun by seeing how a lot of these similar ideas can be applied to things like Style Transfer and DeepDream to generate really cool images. 75:30
+So, next time, we'll talk about unsupervised learning Autoencoders, Variational Autoencoders and generative adversarial networks so that should be a fun lecture. 75:37
