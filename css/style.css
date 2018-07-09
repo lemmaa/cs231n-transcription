@@ -1,18 +1,18 @@
 body {
 	background: darkgray;
 }
-div {
-	background: white;
-	padding: 100px;
-	width: 699px;
-	margin: auto;
-}
 h1,h2,h3 {
 	font-family: cambria;
 }
 p {
 	font-family: calibri;
 	font-size: 14pt;
+}
+.lecture {
+	background: white;
+	padding: 100px;
+	width: 699px;
+	margin: auto;
 }
 .timestamp {
 	color: lightgray;
